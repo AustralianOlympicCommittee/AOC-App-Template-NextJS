@@ -34,6 +34,7 @@ jobs:
     env:
       AZURE_LOCATION: ${{ secrets.AZURE_LOCATION || vars.AZURE_LOCATION || 'australiaeast' }}
       DEPLOY_ENV: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST || vars.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID || vars.DATABRICKS_CLIENT_ID }}
       DATABRICKS_OAUTH_SECRET_1: ${{ secrets.DATABRICKS_OAUTH_SECRET_1 }}
@@ -62,13 +63,14 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
 
       - name: Build and push image
         shell: bash
         run: |
           set -euo pipefail
           IMAGE="${ACR_LOGIN_SERVER}/${APP_SLUG}:${GITHUB_SHA}"
-          az acr login --name "${ACR_NAME}"
+          az acr login --name "${ACR_NAME}" --subscription "${AZURE_SUBSCRIPTION_ID}"
           docker build --tag "${IMAGE}" .
           docker push "${IMAGE}"
           echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
@@ -83,20 +85,20 @@ jobs:
           CONTAINER_APP="ca-${APP_SLUG}-${DEPLOY_ENV}"
           IDENTITY_NAME="id-app-${APP_SLUG}-${DEPLOY_ENV}"
 
-          az provider register --namespace Microsoft.App --wait
+          az group show --name "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null
 
-          az group show --name "${RESOURCE_GROUP}" >/dev/null
-
-          if ! az containerapp env show --name "${CONTAINER_ENV}" --resource-group "${RESOURCE_GROUP}" >/dev/null 2>&1; then
+          if ! az containerapp env show --name "${CONTAINER_ENV}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
             WORKSPACE_ID="$(az monitor log-analytics workspace show \
               --resource-group "${LOG_ANALYTICS_RG}" \
               --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --query customerId \
               --output tsv)"
 
             WORKSPACE_KEY="$(az monitor log-analytics workspace get-shared-keys \
               --resource-group "${LOG_ANALYTICS_RG}" \
               --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --query primarySharedKey \
               --output tsv)"
 
@@ -104,26 +106,30 @@ jobs:
               --name "${CONTAINER_ENV}" \
               --resource-group "${RESOURCE_GROUP}" \
               --location "${AZURE_LOCATION}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --logs-workspace-id "${WORKSPACE_ID}" \
               --logs-workspace-key "${WORKSPACE_KEY}"
           fi
 
-          if ! az identity show --name "${IDENTITY_NAME}" --resource-group "${RESOURCE_GROUP}" >/dev/null 2>&1; then
+          if ! az identity show --name "${IDENTITY_NAME}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
             az identity create \
               --name "${IDENTITY_NAME}" \
               --resource-group "${RESOURCE_GROUP}" \
-              --location "${AZURE_LOCATION}"
+              --location "${AZURE_LOCATION}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}"
           fi
 
           IDENTITY_ID="$(az identity show \
             --name "${IDENTITY_NAME}" \
             --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
             --query id \
             --output tsv)"
 
           IDENTITY_PRINCIPAL_ID="$(az identity show \
             --name "${IDENTITY_NAME}" \
             --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
             --query principalId \
             --output tsv)"
 
@@ -141,11 +147,12 @@ jobs:
             "LAKEBASE_USER=${LAKEBASE_USER}"
           )
 
-          if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" >/dev/null 2>&1; then
+          if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
             az containerapp create \
               --name "${CONTAINER_APP}" \
               --resource-group "${RESOURCE_GROUP}" \
               --environment "${CONTAINER_ENV}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --image "${IMAGE}" \
               --target-port 3000 \
               --ingress external \
@@ -164,6 +171,7 @@ jobs:
             az containerapp secret set \
               --name "${CONTAINER_APP}" \
               --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --secrets \
                 "databricks-oauth-secret-1=${DATABRICKS_OAUTH_SECRET_1}" \
                 "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}"
@@ -171,6 +179,7 @@ jobs:
             az containerapp update \
               --name "${CONTAINER_APP}" \
               --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --image "${IMAGE}" \
               --set-env-vars "${COMMON_ENV_VARS[@]}"
           fi
@@ -178,6 +187,7 @@ jobs:
           FQDN="$(az containerapp show \
             --name "${CONTAINER_APP}" \
             --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
             --query properties.configuration.ingress.fqdn \
             --output tsv)"
 
