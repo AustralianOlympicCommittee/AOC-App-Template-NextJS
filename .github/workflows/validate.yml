@@ -1,0 +1,44 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and build
+        run: npm run check
+
+      - name: Validate required documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            docs/architecture.md \
+            docs/data-model.md \
+            docs/security.md \
+            docs/audit.md \
+            docs/runbook.md \
+            docs/support.md \
+            docs/user-guide.md \
+            docs/oversight.md
+          do
+            test -s "$file"
+          done

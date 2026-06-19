@@ -1,0 +1,25 @@
+# Guidance For Claude Code
+
+Read [INSTRUCTIONS.md](INSTRUCTIONS.md) and [app.yml](app.yml) before making any change.
+
+This repository is the AOC organisational application template. It adopts local or individual apps into governed Next.js applications deployed to Azure Container Apps, secured by Microsoft Entra, and backed by Databricks Lakebase.
+
+`INSTRUCTIONS.md` is the source of truth. This file is only a Claude-specific entry point.
+
+## Summary
+
+- Use Australian English.
+- Do not commit secrets.
+- Use one Container App by default.
+- Keep app permissions separate from Azure administration.
+- Use Entra groups named `app-{app}-{env}-read|write|admin`.
+- Use Lakebase database names with underscores, for example `db_app_trip_management_prod`.
+- Write app audit events to Lakebase and redundant structured audit logs to Log Analytics.
+- Keep required docs current.
+
+## Before You Implement
+
+1. Read `app.yml`.
+2. Read `INSTRUCTIONS.md`.
+3. If the request changes risk level, use the warning text in `INSTRUCTIONS.md`.
+4. For build-out work, prioritise the Phase 0 proof in [docs/phase-0-proof-runbook.md](docs/phase-0-proof-runbook.md).

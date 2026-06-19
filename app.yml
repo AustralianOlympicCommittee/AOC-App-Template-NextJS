@@ -1,0 +1,162 @@
+# AOC organisational application metadata.
+# This file is the single source of truth for how an adopted app is governed,
+# provisioned and operated. Replace the template values when creating an app.
+
+app:
+  name: aoc-app-template-nextjs
+  display_name: AOC App Template NextJS
+  description: Standard template for adopting local apps into governed Next.js applications.
+  owner: replace-with-owner
+  technical_owner: replace-with-technical-owner
+  business_unit: Technology
+  cost_centre: replace-with-cost-centre
+  intended_audience: creator_only
+
+classification:
+  # personal | internal | external
+  scope: personal
+  # aoc-public | aoc-confidential | aoc-sensitive
+  sensitivity: aoc-public
+  # foundation | operational | mature
+  timeline: foundation
+
+runtime:
+  framework: nextjs
+  node_version: "22"
+  package_manager: npm
+  build_command: npm run build
+  start_command: npm run start
+  health_path: /api/health
+  container_app_mode: combined
+  split_runtime_exception: false
+  public_ingress: false
+
+hosting:
+  azure_deployment: false
+  environment: local
+  production: false
+  location: australiaeast
+  azure_tenant_id: 8f38a566-2ac4-45fd-b5bd-f8097b849ee6
+  azure_subscription_id: d68f6255-86d1-4bc9-829b-0a80d18bbb07
+  resource_group_name: rg-app-aoc-app-template-nextjs-dev
+  container_app_name: ca-aoc-app-template-nextjs-dev
+  container_apps_managed_environment_name: cae-aoc-app-template-nextjs-dev
+  container_apps_managed_environment_model: per_app_environment
+  container_registry_name: acraocappsprod
+  container_registry_login_server: acraocappsprod.azurecr.io
+  platform_resource_group_name: rg-aoc-app-platform
+  log_analytics_workspace_name: AOCLogAnalytics
+  log_analytics_workspace_resource_group: loganalytics
+  log_analytics_required: true
+
+identity:
+  entra_app_registration_required: false
+  enterprise_application_required: false
+  assignment_required: true
+  app_roles:
+    - name: App.Read
+      group_name: app-aoc-app-template-nextjs-dev-read
+      description: Can read app data and use standard app workflows.
+    - name: App.Write
+      group_name: app-aoc-app-template-nextjs-dev-write
+      description: Can create or update app data.
+    - name: App.Admin
+      group_name: app-aoc-app-template-nextjs-dev-admin
+      description: Can administer app-level settings and access.
+  azure_rbac:
+    app_groups_receive_resource_group_reader: true
+    app_groups_receive_contributor: false
+    platform_owned_deployment: true
+
+database:
+  provider: databricks_lakebase
+  databricks_host_secret_name: DATABRICKS_HOST
+  shared_lakebase_project_name: projects/aoc-apps-prod
+  shared_lakebase_project_uid: b27afc57-8f3f-400a-96bf-86e92e82938e
+  dedicated_lakebase_project_required: false
+  dedicated_lakebase_project_approval_required: true
+  database_name: db_app_aoc_app_template_nextjs_dev
+  environment_database_model: database_per_app_environment
+  endpoint_path_variable: LAKEBASE_ENDPOINT_PATH
+  pg_host_variable: LAKEBASE_PGHOST
+  pg_port_variable: LAKEBASE_PGPORT
+  pg_database_variable: LAKEBASE_DATABASE
+  pg_user_variable: LAKEBASE_USER
+  ssl_required: true
+  runtime_authentication: oauth_database_credentials
+  token_rotation_required: true
+  oauth_secret_fallback_order:
+    - DATABRICKS_OAUTH_SECRET_1
+    - DATABRICKS_OAUTH_SECRET_2
+  oauth_secret_fallback_required: true
+  migration_command: npm run db:migrate
+  service_principals:
+    runtime_db_reader: sp-app-aoc-app-template-nextjs-dev-dbreader
+    migration_db_owner: sp-app-aoc-app-template-nextjs-dev-dbowner
+  contains_sensitive_data: false
+
+data_sources:
+  unity_catalog: []
+  delta_sharing: []
+  open_sharing: []
+
+audit:
+  lakebase_app_audit_required: true
+  log_analytics_redundancy_required: true
+  purview_expected: true
+  audit_table_name: app_audit_events
+  audit_retention: 1_year_unless_overridden
+  log_analytics_retention: 1_year_minimum
+  sensitive_payloads_in_logs_allowed: false
+
+deployment:
+  github_org: AustralianOlympicCommittee
+  default_branch: main
+  branch_environment_map:
+    dev: dev
+    main: prod
+  github_environments:
+    - dev
+    - prod
+  platform_dispatch_repo: replace-with-platform-repo
+  required_github_environment_secrets:
+    - DATABRICKS_OAUTH_SECRET_1
+    - DATABRICKS_OAUTH_SECRET_2
+  optional_platform_dispatch_secrets:
+    - AOC_PLATFORM_DISPATCH_TOKEN
+  required_github_environment_variables:
+    - AZURE_LOCATION
+    - AZURE_CLIENT_ID
+    - AZURE_TENANT_ID
+    - AZURE_SUBSCRIPTION_ID
+    - DATABRICKS_HOST
+    - DATABRICKS_CLIENT_ID
+    - LAKEBASE_SHARED_PROJECT_NAME
+    - CONTAINER_REGISTRY_LOGIN_SERVER
+    - LAKEBASE_ENDPOINT_PATH
+    - LAKEBASE_PGHOST
+    - LAKEBASE_PGPORT
+    - LAKEBASE_DATABASE
+    - LAKEBASE_USER
+  current_phase_0_repo_secrets:
+    - DATABRICKS_HOST
+    - DATABRICKS_CLIENT_ID
+    - DATABRICKS_OAUTH_SECRET_1
+    - DATABRICKS_OAUTH_SECRET_2
+
+lifecycle:
+  expiry_date:
+  review_date:
+  deletion_policy: retain_audit_then_decommission
+
+oversight:
+  required_for:
+    - production
+    - external_access
+    - public_ingress
+    - custom_domain
+    - sensitive_data
+    - microsoft_graph_permissions
+    - dedicated_lakebase_project
+    - shared_databricks_dataset
+  evidence_document: docs/oversight.md
