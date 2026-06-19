@@ -84,30 +84,22 @@ jobs:
           IDENTITY_NAME="id-app-${APP_SLUG}-${DEPLOY_ENV}"
 
           az provider register --namespace Microsoft.App --wait
-          az provider register --namespace Microsoft.OperationalInsights --wait
 
-          az group create \
-            --name "${RESOURCE_GROUP}" \
-            --location "${AZURE_LOCATION}" \
-            --tags \
-              ApplicationName="${APP_SLUG}" \
-              Environment="${DEPLOY_ENV}" \
-              ManagedBy="GitHub-Actions" \
-              Repository="${GITHUB_REPOSITORY}"
-
-          WORKSPACE_ID="$(az monitor log-analytics workspace show \
-            --resource-group "${LOG_ANALYTICS_RG}" \
-            --workspace-name "${LOG_ANALYTICS_NAME}" \
-            --query customerId \
-            --output tsv)"
-
-          WORKSPACE_KEY="$(az monitor log-analytics workspace get-shared-keys \
-            --resource-group "${LOG_ANALYTICS_RG}" \
-            --workspace-name "${LOG_ANALYTICS_NAME}" \
-            --query primarySharedKey \
-            --output tsv)"
+          az group show --name "${RESOURCE_GROUP}" >/dev/null
 
           if ! az containerapp env show --name "${CONTAINER_ENV}" --resource-group "${RESOURCE_GROUP}" >/dev/null 2>&1; then
+            WORKSPACE_ID="$(az monitor log-analytics workspace show \
+              --resource-group "${LOG_ANALYTICS_RG}" \
+              --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --query customerId \
+              --output tsv)"
+
+            WORKSPACE_KEY="$(az monitor log-analytics workspace get-shared-keys \
+              --resource-group "${LOG_ANALYTICS_RG}" \
+              --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --query primarySharedKey \
+              --output tsv)"
+
             az containerapp env create \
               --name "${CONTAINER_ENV}" \
               --resource-group "${RESOURCE_GROUP}" \
@@ -116,10 +108,12 @@ jobs:
               --logs-workspace-key "${WORKSPACE_KEY}"
           fi
 
-          az identity create \
-            --name "${IDENTITY_NAME}" \
-            --resource-group "${RESOURCE_GROUP}" \
-            --location "${AZURE_LOCATION}"
+          if ! az identity show --name "${IDENTITY_NAME}" --resource-group "${RESOURCE_GROUP}" >/dev/null 2>&1; then
+            az identity create \
+              --name "${IDENTITY_NAME}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --location "${AZURE_LOCATION}"
+          fi
 
           IDENTITY_ID="$(az identity show \
             --name "${IDENTITY_NAME}" \
@@ -132,17 +126,6 @@ jobs:
             --resource-group "${RESOURCE_GROUP}" \
             --query principalId \
             --output tsv)"
-
-          ACR_ID="$(az acr show \
-            --name "${ACR_NAME}" \
-            --query id \
-            --output tsv)"
-
-          az role assignment create \
-            --assignee-object-id "${IDENTITY_PRINCIPAL_ID}" \
-            --assignee-principal-type ServicePrincipal \
-            --role AcrPull \
-            --scope "${ACR_ID}" || true
 
           COMMON_ENV_VARS=(
             "APP_NAME=${APP_SLUG}"
