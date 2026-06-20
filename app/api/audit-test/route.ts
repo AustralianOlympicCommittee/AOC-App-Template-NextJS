@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAuditEvent, writeAuditEvent } from "../../../lib/audit";
 import { isConfigurationError, sanitiseError } from "../../../lib/errors";
+import { logStructured } from "../../../lib/logging";
 
 export const runtime = "nodejs";
 
@@ -40,13 +41,21 @@ async function runAuditTest(request: NextRequest) {
       }
     });
   } catch (error) {
+    const sanitised = sanitiseError(error);
+    logStructured("error", "Phase 0 audit endpoint failed.", {
+      error_code: sanitised.code,
+      error_message: sanitised.message,
+      event_id: event.event_id,
+      request_id: event.request_id
+    });
+
     const status = isConfigurationError(error) ? 500 : 502;
     return NextResponse.json(
       {
         status: "error",
         event_id: event.event_id,
         request_id: event.request_id,
-        error: sanitiseError(error)
+        error: sanitised
       },
       { status }
     );

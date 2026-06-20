@@ -206,4 +206,9 @@ jobs:
             echo "Skipping /api/audit-test because Lakebase connection variables are not fully configured."
             exit 0
           fi
-          curl --fail --show-error --silent "${APP_URL}/api/audit-test"
+          status_code="$(curl --show-error --silent --output audit-test-response.json --write-out "%{http_code}" "${APP_URL}/api/audit-test")"
+          cat audit-test-response.json
+          if [[ "${status_code}" -lt 200 || "${status_code}" -ge 300 ]]; then
+            echo "Audit endpoint returned HTTP ${status_code}."
+            exit 1
+          fi
