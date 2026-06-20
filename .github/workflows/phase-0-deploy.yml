@@ -183,6 +183,37 @@ jobs:
               --set-env-vars "${COMMON_ENV_VARS[@]}"
           fi
 
+          echo "Waiting for the latest Container App revision to become ready."
+          for attempt in {1..60}; do
+            mapfile -t revision_status < <(az containerapp show \
+              --name "${CONTAINER_APP}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --query "[properties.latestRevisionName, properties.latestReadyRevisionName, properties.provisioningState, properties.runningStatus]" \
+              --output tsv)
+
+            latest_revision="${revision_status[0]:-}"
+            ready_revision="${revision_status[1]:-}"
+            provisioning_state="${revision_status[2]:-}"
+            running_status="${revision_status[3]:-}"
+
+            if [[ -n "${latest_revision}" && "${latest_revision}" == "${ready_revision}" && "${provisioning_state}" == "Succeeded" && "${running_status}" == "Running" ]]; then
+              echo "Revision ${ready_revision} is ready."
+              break
+            fi
+
+            if [[ "${attempt}" -eq 60 ]]; then
+              echo "Timed out waiting for revision readiness."
+              echo "Latest revision: ${latest_revision:-unknown}"
+              echo "Latest ready revision: ${ready_revision:-unknown}"
+              echo "Provisioning state: ${provisioning_state:-unknown}"
+              echo "Running status: ${running_status:-unknown}"
+              exit 1
+            fi
+
+            sleep 5
+          done
+
           FQDN="$(az containerapp show \
             --name "${CONTAINER_APP}" \
             --resource-group "${RESOURCE_GROUP}" \
