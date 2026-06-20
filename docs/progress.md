@@ -51,8 +51,9 @@ Verification:
 - `node --check scripts/provision-lakebase.mjs` passed.
 - `node --check scripts/validate-app-contract.mjs` passed.
 - `npm run check` passed.
+- GitHub Actions Validate run `27865150636` passed on commit `554576a59c6c3182d6107e4780f556237af9d420`.
+- GitHub Actions Phase 0 Deploy run `27865150649` passed on commit `554576a59c6c3182d6107e4780f556237af9d420`.
 
 Remaining follow-up:
 
-- Confirm GitHub Actions validation passes after the push.
 - Later phases should move more deployment values from Bash constants into `app.yml` or a generated deployment manifest.
