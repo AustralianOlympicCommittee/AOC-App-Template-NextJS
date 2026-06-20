@@ -60,7 +60,7 @@ Remaining follow-up:
 
 ## Phase 1B - Deployment Manifest and Audit Migration
 
-Status: locally verified; GitHub Actions verification pending after push.
+Status: complete.
 
 Scope:
 
@@ -86,7 +86,13 @@ Local verification:
 - `node scripts/generate-deployment-manifest.mjs --environment prod --output .generated/deployment-manifest-prod.json` generated the expected `prod` names.
 - `npm run check` passed, including TypeScript and the Next.js production build.
 
-Pending verification after push:
+Remote verification:
 
-- GitHub Actions Validate should pass on `dev`.
-- GitHub Actions Phase 0 Deploy should run the Lakebase audit migration and then verify `/api/health` and `/api/audit-test`.
+- Commit `7f4fb21bd11a1caf8f3399683f695531f2d8f1b3` pushed to `dev`.
+- GitHub Actions Validate run `27865716298` passed.
+- GitHub Actions Phase 0 Deploy run `27865716286` passed.
+- The deployment run completed `Generate deployment manifest`, `Provision Lakebase role and database`, `Run Lakebase audit migration`, `Verify health endpoint` and `Verify audit endpoint when Lakebase variables are present`.
+
+Remaining follow-up:
+
+- GitHub Actions emitted a Node.js 20 deprecation annotation for marketplace actions that are being forced to Node.js 24. This does not block Phase 1B, but the workflow should move to newer action versions when available.
