@@ -99,7 +99,7 @@ Remaining follow-up:
 
 ## Phase 1C - Entra And Access Provisioning Contract
 
-Status: locally verified; GitHub Actions verification pending after push.
+Status: blocked on deployment identity Microsoft Graph permissions.
 
 Scope:
 
@@ -128,7 +128,19 @@ Local verification:
 - `node scripts/provision-entra.mjs --dry-run --manifest .generated/deployment-manifest-prod.json --output .generated/entra-provisioning-plan-prod.json` generated the expected `prod` Entra dry-run plan.
 - `npm run check` passed, including TypeScript and the Next.js production build.
 
-Pending verification after push:
+Remote verification:
 
-- GitHub Actions Validate should pass on `dev`.
-- GitHub Actions Phase 0 Deploy should provision Entra identity objects, then complete Lakebase, Container App, health and audit checks.
+- Commit `ba9efcb80540082868aa235a1432a2e00df79f22` pushed to `dev`.
+- GitHub Actions Validate run `27866287494` passed.
+- GitHub Actions Phase 0 Deploy run `27866287493` failed at `Provision Entra app registration, Enterprise Application and app groups`.
+- The failing Microsoft Graph request was `GET /applications` with `Authorization_RequestDenied` and `Insufficient privileges to complete the operation`.
+
+Current blocker:
+
+- The GitHub deployment identity can authenticate to Azure with OIDC, but it does not yet have enough Microsoft Graph or Entra directory permission to read and manage app registrations.
+
+Resume steps:
+
+- Grant the deployment identity approved Entra or Microsoft Graph permission for app registrations, service principals, groups and app-role assignments.
+- Re-run GitHub Actions Phase 0 Deploy for commit `ba9efcb80540082868aa235a1432a2e00df79f22`.
+- If the Entra step passes, continue watching Lakebase provisioning, audit migration, Container App deployment, health verification and audit endpoint verification.

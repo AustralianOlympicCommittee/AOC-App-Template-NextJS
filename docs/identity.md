@@ -37,6 +37,18 @@ The foundation template does not request Microsoft Graph permissions for the app
 
 The deployment identity needs Microsoft Graph rights to manage app registrations, service principals, groups and app-role assignments. If GitHub Actions fails at `Provision Entra app registration, Enterprise Application and app groups`, check whether the platform identity has the required Entra role and Graph application permissions.
 
+Observed Phase 1C blocker:
+
+- GitHub Actions Phase 0 Deploy run `27866287493` failed at `Provision Entra app registration, Enterprise Application and app groups`.
+- Microsoft Graph returned `Authorization_RequestDenied` and `Insufficient privileges to complete the operation` on `GET /applications`.
+- This indicates the Azure deployment identity can log in with OIDC but does not yet have enough Microsoft Graph or Entra directory permission to read and manage app registrations.
+
+Recommended IT handoff:
+
+- Grant the deployment identity an approved Entra role or Graph application permissions that cover app registrations, service principals, groups and app-role assignments.
+- Re-run the Phase 0 Deploy workflow for the same commit after permissions are granted.
+- Do not work around this by manually creating different group or app registration names; the provisioning contract relies on deterministic names from `app.yml`.
+
 ## Local Checks
 
 Run a dry-run plan without creating Entra objects:
