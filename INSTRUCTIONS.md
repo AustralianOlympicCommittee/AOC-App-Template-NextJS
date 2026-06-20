@@ -54,6 +54,10 @@ These groups are assigned to Entra app roles and govern application permissions.
 
 Do not add Microsoft Graph permissions without oversight evidence.
 
+The deployment workflow provisions the Entra app registration, Enterprise Application, app roles and app groups from `app.yml`. Agents must use `npm run validate:identity` for a local dry-run plan and `npm run provision:entra` only after Azure login through the controlled deployment identity.
+
+Runtime token validation and sign-in enforcement are separate implementation work. Do not claim an app is Entra-protected at runtime until token validation and app-role claim checks exist in the application code.
+
 ## Lakebase Rules
 
 - Use Databricks Lakebase as the standard transactional database layer.
@@ -85,6 +89,7 @@ Required documentation:
 - `docs/data-model.md`
 - `docs/security.md`
 - `docs/audit.md`
+- `docs/identity.md`
 - `docs/runbook.md`
 - `docs/support.md`
 - `docs/user-guide.md`

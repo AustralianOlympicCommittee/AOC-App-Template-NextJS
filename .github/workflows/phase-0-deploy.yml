@@ -29,6 +29,7 @@ on:
       - "scripts/app-contract.mjs"
       - "scripts/generate-deployment-manifest.mjs"
       - "scripts/migrate-lakebase-audit.mjs"
+      - "scripts/provision-entra.mjs"
       - "scripts/provision-lakebase.mjs"
       - "scripts/validate-app-contract.mjs"
       - "tsconfig.json"
@@ -45,6 +46,7 @@ jobs:
       AZURE_LOCATION: ${{ secrets.AZURE_LOCATION || vars.AZURE_LOCATION || 'australiaeast' }}
       DEPLOY_ENV: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST || vars.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID || vars.DATABRICKS_CLIENT_ID }}
       DATABRICKS_OAUTH_SECRET_1: ${{ secrets.DATABRICKS_OAUTH_SECRET_1 }}
@@ -69,6 +71,17 @@ jobs:
         shell: bash
         run: node scripts/generate-deployment-manifest.mjs --environment "${DEPLOY_ENV}" --github-env "$GITHUB_ENV"
 
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Provision Entra app registration, Enterprise Application and app groups
+        shell: bash
+        run: node scripts/provision-entra.mjs --github-env "$GITHUB_ENV"
+
       - name: Provision Lakebase role and database
         shell: bash
         run: node scripts/provision-lakebase.mjs
@@ -76,13 +89,6 @@ jobs:
       - name: Run Lakebase audit migration
         shell: bash
         run: node scripts/migrate-lakebase-audit.mjs
-
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
-          allow-no-subscriptions: true
 
       - name: Build and push image
         shell: bash
@@ -160,6 +166,14 @@ jobs:
             "LAKEBASE_PGPORT=${LAKEBASE_PGPORT}"
             "LAKEBASE_DATABASE=${LAKEBASE_DATABASE}"
             "LAKEBASE_USER=${LAKEBASE_USER}"
+            "ENTRA_APP_OBJECT_ID=${ENTRA_APP_OBJECT_ID}"
+            "ENTRA_AUTHORITY=${ENTRA_AUTHORITY}"
+            "ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}"
+            "ENTRA_SERVICE_PRINCIPAL_OBJECT_ID=${ENTRA_SERVICE_PRINCIPAL_OBJECT_ID}"
+            "ENTRA_TENANT_ID=${ENTRA_TENANT_ID}"
+            "ENTRA_READ_GROUP_ID=${ENTRA_READ_GROUP_ID}"
+            "ENTRA_WRITE_GROUP_ID=${ENTRA_WRITE_GROUP_ID}"
+            "ENTRA_ADMIN_GROUP_ID=${ENTRA_ADMIN_GROUP_ID}"
           )
 
           if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then

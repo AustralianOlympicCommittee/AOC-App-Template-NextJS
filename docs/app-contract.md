@@ -20,6 +20,11 @@
   - `app-<app>-<env>-read`
   - `app-<app>-<env>-write`
   - `app-<app>-<env>-admin`
+- `identity.entra_app_registration_required` and `identity.enterprise_application_required` must be `true`.
+- `identity.app_registration_display_name` must follow `app-<app>-<env>`.
+- `identity.sign_in_audience` must be `AzureADMyOrg`.
+- `identity.assignment_required` must be `true`.
+- `identity.microsoft_graph_permissions` must be empty until oversight evidence exists.
 - `LAKEBASE_DATABASE` and `LAKEBASE_USER` are not required GitHub variables. The workflow derives them from app metadata and the Databricks service-principal application ID.
 - Databricks OAuth fallback must try `DATABRICKS_OAUTH_SECRET_1` before `DATABRICKS_OAUTH_SECRET_2`.
 - `database.migration_command` must be `npm run migrate:audit`.
@@ -40,7 +45,26 @@ The default output is `.generated/deployment-manifest.json`, which is intentiona
 - Azure resource group, Container App, Container Apps environment and managed identity names.
 - Azure Container Registry and Log Analytics workspace names.
 - Lakebase database name, Lakebase user and audit table name.
+- Entra app registration display name, redirect path, sign-in audience, app roles and group names.
 - App slug, display name and health path.
+
+## Entra Provisioning
+
+Phase 1C provisions identity objects from the generated manifest.
+
+Run a dry-run plan:
+
+```bash
+npm run validate:identity
+```
+
+Run real provisioning after Azure login:
+
+```bash
+npm run provision:entra
+```
+
+The deployment workflow runs real provisioning and exports Entra IDs for the Container App. See [identity.md](identity.md).
 
 ## Validation
 
@@ -51,10 +75,10 @@ npm run validate:contract
 ```
 
 `npm run check` also runs the contract validator before TypeScript and the production build.
-It also syntax-checks the deployment scripts and generates the dev deployment manifest so manifest drift is caught during CI.
+It also syntax-checks the deployment scripts, generates the dev deployment manifest and generates a dry-run Entra provisioning plan so manifest and identity drift are caught during CI.
 
 ## Current Limits
 
 - The validator is intentionally scoped to this template's `app.yml` shape rather than acting as a general YAML parser.
 - The deploy workflow now consumes a generated manifest, but it still provisions Azure resources through inline workflow commands rather than Bicep or a platform dispatch workflow.
-- Entra application registration and group provisioning are documented in the contract but are not automated yet.
+- Runtime Entra token validation and user sign-in enforcement are not implemented yet.

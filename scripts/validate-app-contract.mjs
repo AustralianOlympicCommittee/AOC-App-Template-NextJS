@@ -14,6 +14,12 @@ const resourceGroup = contract.scalar("hosting", "resource_group_name");
 const containerApp = contract.scalar("hosting", "container_app_name");
 const managedEnvironment = contract.scalar("hosting", "container_apps_managed_environment_name");
 const managedEnvironmentModel = contract.scalar("hosting", "container_apps_managed_environment_model");
+const entraAppRegistrationRequired = contract.scalar("identity", "entra_app_registration_required");
+const enterpriseApplicationRequired = contract.scalar("identity", "enterprise_application_required");
+const appRegistrationDisplayName = contract.scalar("identity", "app_registration_display_name");
+const signInAudience = contract.scalar("identity", "sign_in_audience");
+const redirectUriPath = contract.scalar("identity", "redirect_uri_path");
+const assignmentRequired = contract.scalar("identity", "assignment_required");
 const databaseProvider = contract.scalar("database", "provider");
 const databaseName = contract.scalar("database", "database_name");
 const databaseModel = contract.scalar("database", "environment_database_model");
@@ -41,6 +47,10 @@ expect("runtime.node_version", nodeVersion, "22");
 expect("runtime.container_app_mode", containerMode, "combined");
 expect("hosting.azure_deployment", azureDeployment, "true");
 expect("hosting.container_apps_managed_environment_model", managedEnvironmentModel, "per_app_environment");
+expect("identity.entra_app_registration_required", entraAppRegistrationRequired, "true");
+expect("identity.enterprise_application_required", enterpriseApplicationRequired, "true");
+expect("identity.sign_in_audience", signInAudience, "AzureADMyOrg");
+expect("identity.assignment_required", assignmentRequired, "true");
 expect("database.provider", databaseProvider, "databricks_lakebase");
 expect("database.environment_database_model", databaseModel, "database_per_app_environment");
 expect("database.runtime_authentication", runtimeAuthentication, "oauth_database_credentials");
@@ -52,6 +62,10 @@ expect("deployment.default_branch", defaultBranch, "main");
 
 if (healthPath && !healthPath.startsWith("/")) {
   fail("runtime.health_path must start with '/'.");
+}
+
+if (redirectUriPath && !redirectUriPath.startsWith("/")) {
+  fail("identity.redirect_uri_path must start with '/'.");
 }
 
 if (auditTableName && !/^[a-z][a-z0-9_]*$/.test(auditTableName)) {
@@ -67,10 +81,12 @@ if (appName && environment) {
     `cae-${appName}-${environment}`
   );
   expect("database.database_name", databaseName, `db-app-${appName}-${environment}`);
+  expect("identity.app_registration_display_name", appRegistrationDisplayName, `app-${appName}-${environment}`);
 }
 
 validateBranchEnvironmentMap();
 validateAppRoles();
+validateMicrosoftGraphPermissions();
 validateRequiredVariables();
 validateOAuthFallbackOrder();
 
@@ -143,6 +159,13 @@ function validateRequiredVariables() {
     if (variables.includes(derived)) {
       fail(`${derived} must not be listed as required; the workflow derives it.`);
     }
+  }
+}
+
+function validateMicrosoftGraphPermissions() {
+  const permissions = contract.list("identity", "microsoft_graph_permissions");
+  if (permissions.length > 0) {
+    fail("identity.microsoft_graph_permissions must be empty until oversight evidence exists.");
   }
 }
 

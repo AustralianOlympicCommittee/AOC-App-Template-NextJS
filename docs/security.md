@@ -12,11 +12,15 @@ Assignment is group-based. The default groups are:
 - `app-{app}-{env}-write`
 - `app-{app}-{env}-admin`
 
+Phase 1C provisions the app registration, Enterprise Application, app roles and security groups from `app.yml`. Runtime token validation is still a separate follow-up phase.
+
 ## Authorisation
 
 The app should authorise using stable Entra app role claims.
 
 Application permission groups do not grant Azure administration. Azure deployment and administration remain platform-owned.
+
+The app registration does not request Microsoft Graph permissions in the foundation contract. Any Graph permission requires oversight evidence in [oversight.md](oversight.md).
 
 ## Secrets
 
@@ -42,6 +46,17 @@ Expected GitHub Environment variables:
 - `LAKEBASE_ENDPOINT_PATH`
 - `LAKEBASE_PGHOST`
 - `LAKEBASE_PGPORT`
+
+The deployment workflow derives and exports these Entra values after provisioning:
+
+- `ENTRA_CLIENT_ID`
+- `ENTRA_TENANT_ID`
+- `ENTRA_AUTHORITY`
+- `ENTRA_APP_OBJECT_ID`
+- `ENTRA_SERVICE_PRINCIPAL_OBJECT_ID`
+- `ENTRA_READ_GROUP_ID`
+- `ENTRA_WRITE_GROUP_ID`
+- `ENTRA_ADMIN_GROUP_ID`
 
 `LAKEBASE_ENDPOINT_PATH` is the Databricks endpoint resource path used to mint a database credential, for example `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. It is not the PostgreSQL connection string.
 

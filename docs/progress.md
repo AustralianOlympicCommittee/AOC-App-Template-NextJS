@@ -96,3 +96,39 @@ Remote verification:
 Remaining follow-up:
 
 - GitHub Actions emitted a Node.js 20 deprecation annotation for marketplace actions that are being forced to Node.js 24. This does not block Phase 1B, but the workflow should move to newer action versions when available.
+
+## Phase 1C - Entra And Access Provisioning Contract
+
+Status: locally verified; GitHub Actions verification pending after push.
+
+Scope:
+
+- Provision or locate the Entra app registration and Enterprise Application for each app environment.
+- Provision or locate the `app-<app>-<env>-read`, `app-<app>-<env>-write` and `app-<app>-<env>-admin` security groups.
+- Assign those groups to matching Entra app roles.
+- Export identity outputs to the deployment workflow for later runtime authentication enforcement.
+- Update agent-facing guidance so future agents explain and govern the identity process consistently.
+
+Implementation record:
+
+- Added `scripts/provision-entra.mjs` for idempotent Entra app registration, Enterprise Application, app role, security group and group assignment provisioning.
+- Extended the generated deployment manifest with Entra app registration, app role and group values.
+- Updated `.github/workflows/phase-0-deploy.yml` to run Azure login before identity provisioning, run Entra provisioning and pass Entra IDs to the Container App.
+- Updated `app.yml` so Entra app registration and Enterprise Application provisioning are required.
+- Added [identity.md](identity.md) and updated the app contract, architecture, security, runbook, oversight and agent guidance documents.
+- Added `npm run validate:identity` for dry-run identity plans and `npm run provision:entra` for real provisioning after Azure login.
+
+Local verification:
+
+- `npm run validate:contract` passed.
+- `npm run check:scripts` passed.
+- `npm run validate:manifest` passed and generated the expected `dev` identity manifest values.
+- `npm run validate:identity` passed and generated the expected `dev` Entra dry-run plan.
+- `node scripts/generate-deployment-manifest.mjs --environment prod --output .generated/deployment-manifest-prod.json` generated the expected `prod` manifest.
+- `node scripts/provision-entra.mjs --dry-run --manifest .generated/deployment-manifest-prod.json --output .generated/entra-provisioning-plan-prod.json` generated the expected `prod` Entra dry-run plan.
+- `npm run check` passed, including TypeScript and the Next.js production build.
+
+Pending verification after push:
+
+- GitHub Actions Validate should pass on `dev`.
+- GitHub Actions Phase 0 Deploy should provision Entra identity objects, then complete Lakebase, Container App, health and audit checks.

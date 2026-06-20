@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 export function loadAppContract(contractPath = "app.yml") {
@@ -128,6 +129,9 @@ export function buildDeploymentManifest(contract, options = {}) {
   const existingRoles = new Map(
     contract.mapList("identity", "app_roles").map((role) => [role.name, role])
   );
+  const appRegistrationDisplayName = sourceEnvMatchesTarget
+    ? contract.scalar("identity", "app_registration_display_name") ?? names.entraApp
+    : names.entraApp;
 
   return {
     schema_version: "1.0",
@@ -190,6 +194,19 @@ export function buildDeploymentManifest(contract, options = {}) {
       audit_table_name: contract.scalar("audit", "audit_table_name") ?? "app_audit_events"
     },
     identity: {
+      app_registration_required: toBoolean(
+        contract.scalar("identity", "entra_app_registration_required"),
+        true
+      ),
+      enterprise_application_required: toBoolean(
+        contract.scalar("identity", "enterprise_application_required"),
+        true
+      ),
+      assignment_required: toBoolean(contract.scalar("identity", "assignment_required"), true),
+      app_registration_display_name: appRegistrationDisplayName,
+      sign_in_audience: contract.scalar("identity", "sign_in_audience") ?? "AzureADMyOrg",
+      redirect_uri_path: contract.scalar("identity", "redirect_uri_path") ?? "/api/auth/callback/entra",
+      microsoft_graph_permissions: contract.list("identity", "microsoft_graph_permissions"),
       app_roles: [
         roleFor("App.Read", "read"),
         roleFor("App.Write", "write"),
@@ -204,8 +221,11 @@ export function buildDeploymentManifest(contract, options = {}) {
 
   function roleFor(name, suffix) {
     const existing = existingRoles.get(name) ?? {};
+    const roleId = existing.id ?? deterministicUuid(`${appName}:${environment}:${name}`);
     return {
+      id: roleId,
       name,
+      value: name,
       group_name: `app-${appName}-${environment}-${suffix}`,
       description: existing.description ?? ""
     };
@@ -222,6 +242,9 @@ export function githubEnvironmentFromManifest(manifest, processEnv = process.env
     ACR_NAME: manifest.azure.container_registry_name,
     CONTAINER_APP: manifest.azure.container_app_name,
     CONTAINER_ENV: manifest.azure.container_apps_managed_environment_name,
+    ENTRA_APP_DISPLAY_NAME: manifest.identity.app_registration_display_name,
+    ENTRA_REDIRECT_URI_PATH: manifest.identity.redirect_uri_path,
+    ENTRA_SIGN_IN_AUDIENCE: manifest.identity.sign_in_audience,
     HEALTH_PATH: manifest.runtime.health_path,
     IDENTITY_NAME: manifest.azure.managed_identity_name,
     LAKEBASE_DATABASE: manifest.lakebase.database_name,
@@ -237,6 +260,7 @@ function environmentNames(appName, environment) {
     containerApp: `ca-${appName}-${environment}`,
     containerEnvironment: `cae-${appName}-${environment}`,
     database: `db-app-${appName}-${environment}`,
+    entraApp: `app-${appName}-${environment}`,
     managedIdentity: `id-app-${appName}-${environment}`,
     resourceGroup: `rg-app-${appName}-${environment}`
   };
@@ -263,4 +287,12 @@ function unquote(value) {
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function deterministicUuid(value) {
+  const hash = createHash("sha256").update(value).digest();
+  hash[6] = (hash[6] & 0x0f) | 0x50;
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+  const hex = hash.subarray(0, 16).toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }

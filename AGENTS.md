@@ -15,6 +15,7 @@ Help the user adopt, document, validate and prepare applications for governed de
 - Do not hardcode Databricks, Azure or Entra tenant-specific secrets in source.
 - Use one Container App by default; split runtimes only by documented exception.
 - Keep application permissions and Azure administration separate.
+- Preserve the Entra provisioning flow: app registration, Enterprise Application, app roles and `app-*` security groups come from `app.yml`.
 - Use Lakebase database names with underscores.
 - Write app audit events to Lakebase and structured redundant audit logs to Log Analytics.
 - Keep required documentation current.
@@ -37,6 +38,13 @@ When asked to adopt an existing app:
 5. Convert simple static pages into Next.js routes.
 6. Add or update required docs.
 7. Keep deployment secrets as GitHub Environment requirements, not source files.
+
+## Identity Provisioning
+
+- Use `npm run validate:identity` for local dry-run checks.
+- Use `npm run provision:entra` only after Azure login through the controlled deployment identity.
+- Do not add Microsoft Graph permissions without an oversight record.
+- Do not claim runtime Entra protection until token validation and app-role claim checks are implemented in application code.
 
 ## Phase 0 Priority
 

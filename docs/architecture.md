@@ -35,6 +35,8 @@ Platform registry:
 
 Every deployed app uses Microsoft Entra authentication through an app registration and enterprise application.
 
+The deployment workflow provisions one app registration and one Enterprise Application per app environment. The Enterprise Application requires assignment, and access is assigned through app roles.
+
 Default app groups:
 
 - `app-{app}-{env}-read`
@@ -42,6 +44,8 @@ Default app groups:
 - `app-{app}-{env}-admin`
 
 These groups control application access. They do not grant Azure administration.
+
+Phase 1C provisions these identity objects and exports Entra IDs to the Container App. Runtime token and role-claim enforcement is the next implementation phase.
 
 ## Database
 

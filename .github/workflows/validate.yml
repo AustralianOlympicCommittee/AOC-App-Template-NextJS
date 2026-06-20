@@ -35,6 +35,7 @@ jobs:
             docs/data-model.md \
             docs/security.md \
             docs/audit.md \
+            docs/identity.md \
             docs/app-contract.md \
             docs/progress.md \
             docs/runbook.md \

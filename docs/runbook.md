@@ -32,13 +32,15 @@ Expected sequence:
 1. Validate `app.yml`.
 2. Syntax-check deployment scripts, typecheck and build.
 3. Generate `.generated/deployment-manifest.json` from `app.yml`.
-4. Provision the Lakebase service-principal role and per-environment app database.
-5. Run the Lakebase audit migration.
-6. Build the container image.
-7. Push the image to the approved registry.
-8. Deploy a new Container App revision.
-9. Run health and audit endpoint checks.
-10. Record deployment evidence.
+4. Log in to Azure with the platform deployment identity.
+5. Provision the Entra app registration, Enterprise Application, app roles and app groups.
+6. Provision the Lakebase service-principal role and per-environment app database.
+7. Run the Lakebase audit migration.
+8. Build the container image.
+9. Push the image to the approved registry.
+10. Deploy a new Container App revision.
+11. Run health and audit endpoint checks.
+12. Record deployment evidence.
 
 ## Rollback
 
@@ -55,6 +57,22 @@ npm run migrate:audit
 ```
 
 This creates the `app_audit_events` table and its timestamp index in the Lakebase app database before the container revision is deployed.
+
+## Identity Provisioning
+
+Run identity provisioning through GitHub Actions. The local dry-run command is:
+
+```bash
+npm run validate:identity
+```
+
+Real provisioning command after Azure login:
+
+```bash
+npm run provision:entra
+```
+
+The command creates or locates the app registration, Enterprise Application, app roles and app groups, then exports Entra IDs for the Container App. See [identity.md](identity.md).
 
 ## Audit Verification
 

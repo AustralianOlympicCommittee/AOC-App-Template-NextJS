@@ -50,9 +50,13 @@ hosting:
   log_analytics_required: true
 
 identity:
-  entra_app_registration_required: false
-  enterprise_application_required: false
+  entra_app_registration_required: true
+  enterprise_application_required: true
+  app_registration_display_name: app-aoc-app-template-nextjs-dev
+  sign_in_audience: AzureADMyOrg
+  redirect_uri_path: /api/auth/callback/entra
   assignment_required: true
+  microsoft_graph_permissions: []
   app_roles:
     - name: App.Read
       group_name: app-aoc-app-template-nextjs-dev-read
