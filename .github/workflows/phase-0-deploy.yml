@@ -43,7 +43,6 @@ jobs:
       LAKEBASE_PGHOST: ${{ secrets.LAKEBASE_PGHOST || vars.LAKEBASE_PGHOST }}
       LAKEBASE_PGPORT: ${{ secrets.LAKEBASE_PGPORT || vars.LAKEBASE_PGPORT || '5432' }}
       LAKEBASE_DATABASE: ${{ secrets.LAKEBASE_DATABASE || vars.LAKEBASE_DATABASE }}
-      LAKEBASE_USER: ${{ secrets.LAKEBASE_USER || vars.LAKEBASE_USER }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +55,10 @@ jobs:
 
       - name: Typecheck and build
         run: npm run check
+
+      - name: Provision Lakebase service-principal role
+        shell: bash
+        run: node scripts/provision-lakebase-role.mjs
 
       - name: Azure login
         uses: azure/login@v2
@@ -143,7 +146,7 @@ jobs:
             "LAKEBASE_PGHOST=${LAKEBASE_PGHOST}"
             "LAKEBASE_PGPORT=${LAKEBASE_PGPORT}"
             "LAKEBASE_DATABASE=${LAKEBASE_DATABASE}"
-            "LAKEBASE_USER=${LAKEBASE_USER}"
+            "LAKEBASE_USER=${DATABRICKS_CLIENT_ID}"
           )
 
           if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
