@@ -42,7 +42,6 @@ jobs:
       LAKEBASE_ENDPOINT_PATH: ${{ secrets.LAKEBASE_ENDPOINT_PATH || vars.LAKEBASE_ENDPOINT_PATH }}
       LAKEBASE_PGHOST: ${{ secrets.LAKEBASE_PGHOST || vars.LAKEBASE_PGHOST }}
       LAKEBASE_PGPORT: ${{ secrets.LAKEBASE_PGPORT || vars.LAKEBASE_PGPORT || '5432' }}
-      LAKEBASE_DATABASE: ${{ secrets.LAKEBASE_DATABASE || vars.LAKEBASE_DATABASE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,7 +55,11 @@ jobs:
       - name: Typecheck and build
         run: npm run check
 
-      - name: Provision Lakebase service-principal role
+      - name: Resolve deployment names
+        shell: bash
+        run: echo "LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}" >> "$GITHUB_ENV"
+
+      - name: Provision Lakebase role and database
         shell: bash
         run: node scripts/provision-lakebase-role.mjs
 

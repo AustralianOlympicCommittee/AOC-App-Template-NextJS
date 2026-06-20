@@ -6,6 +6,8 @@ const REQUIRED_CONFIGURATION = [
 
 let branchPath = "";
 let clientId = "";
+let databaseName = "";
+let databaseResourceName = "";
 let host = "";
 let roleName = "";
 
@@ -25,12 +27,18 @@ async function main() {
   clientId = required("DATABRICKS_CLIENT_ID");
   branchPath = branchFromEndpoint(required("LAKEBASE_ENDPOINT_PATH"));
   roleName = `${branchPath}/roles/${clientId}`;
+  databaseName = required("LAKEBASE_DATABASE");
+  databaseResourceName = `${branchPath}/databases/${databaseName}`;
 
   const token = await requestWorkspaceToken();
+  await ensureServicePrincipalRole(token);
+  await ensureAppDatabase(token);
+}
+
+async function ensureServicePrincipalRole(token) {
   const existingRole = await databricksApi(token, "GET", `/api/2.0/postgres/${roleName}`, {
     acceptedStatuses: [200, 404]
   });
-
   if (existingRole.status === 200) {
     assertServicePrincipalRole(existingRole.body);
     console.log(`Lakebase service-principal role already exists: ${roleName}`);
@@ -63,6 +71,54 @@ async function main() {
   });
   assertServicePrincipalRole(verifiedRole.body);
   console.log(`Lakebase service-principal role is ready: ${roleName}`);
+}
+
+async function ensureAppDatabase(token) {
+  const existingDatabase = await databricksApi(
+    token,
+    "GET",
+    `/api/2.0/postgres/${databaseResourceName}`,
+    {
+      acceptedStatuses: [200, 404]
+    }
+  );
+
+  if (existingDatabase.status === 200) {
+    assertAppDatabase(existingDatabase.body);
+    console.log(`Lakebase app database already exists: ${databaseResourceName}`);
+    return;
+  }
+
+  console.log(`Creating Lakebase app database: ${databaseResourceName}`);
+  const created = await databricksApi(
+    token,
+    "POST",
+    `/api/2.0/postgres/${branchPath}/databases?database_id=${encodeURIComponent(databaseName)}`,
+    {
+      acceptedStatuses: [200, 201, 202],
+      body: {
+        database_id: databaseName,
+        parent: branchPath,
+        spec: {
+          postgres_database: databaseName,
+          role: roleName
+        }
+      }
+    }
+  );
+
+  await waitForOperation(token, created.body);
+
+  const verifiedDatabase = await databricksApi(
+    token,
+    "GET",
+    `/api/2.0/postgres/${databaseResourceName}`,
+    {
+      acceptedStatuses: [200]
+    }
+  );
+  assertAppDatabase(verifiedDatabase.body);
+  console.log(`Lakebase app database is ready: ${databaseResourceName}`);
 }
 
 async function requestWorkspaceToken() {
@@ -159,6 +215,15 @@ function assertServicePrincipalRole(role) {
   ) {
     throw new Error(
       `Lakebase role ${roleName} exists but is not mapped to this service principal with LAKEBASE_OAUTH_V1.`
+    );
+  }
+}
+
+function assertAppDatabase(database) {
+  const details = database?.status ?? database?.spec ?? {};
+  if (details.postgres_database !== databaseName || details.role !== roleName) {
+    throw new Error(
+      `Lakebase database ${databaseResourceName} exists but is not owned by the app service-principal role.`
     );
   }
 }
