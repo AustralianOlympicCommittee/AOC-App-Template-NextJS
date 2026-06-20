@@ -76,8 +76,8 @@ No `LAKEBASE_DATABASE` or `LAKEBASE_USER` secret is required for this workflow. 
 
 Completed locally:
 
-- `node --check scripts/provision-lakebase-role.mjs`
-- `node scripts/provision-lakebase-role.mjs` skip path
+- `node --check scripts/provision-lakebase.mjs`
+- `node scripts/provision-lakebase.mjs` skip path
 - `npm run check`
 - `npm audit --audit-level=moderate`
 - `docker build --tag aoc-app-template-nextjs:phase0 .`

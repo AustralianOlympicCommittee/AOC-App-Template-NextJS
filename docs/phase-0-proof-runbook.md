@@ -85,28 +85,34 @@ Variables:
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_LOCATION`
-- `LAKEBASE_SHARED_PROJECT_NAME`
 - `LAKEBASE_ENDPOINT_PATH`
 - `LAKEBASE_PGHOST`
 - `LAKEBASE_PGPORT`
-- `LAKEBASE_DATABASE`
-- `LAKEBASE_USER`
-- `CONTAINER_REGISTRY_LOGIN_SERVER`
 
 Current Phase 0 repository secrets already created:
 
+- `AZURE_CLIENT_ID`
+- `AZURE_LOCATION`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_TENANT_ID`
 - `DATABRICKS_HOST`
 - `DATABRICKS_CLIENT_ID`
 - `DATABRICKS_OAUTH_SECRET_1`
 - `DATABRICKS_OAUTH_SECRET_2`
+- `LAKEBASE_ENDPOINT_PATH`
+- `LAKEBASE_PGHOST`
+- `LAKEBASE_PGPORT`
 
-Lakebase connection values still required from the Lakebase Connect dialog:
+Lakebase connection values used from the Lakebase Connect dialog:
 
 - `LAKEBASE_ENDPOINT_PATH`, format `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. This is the Databricks Lakebase endpoint resource path used by the Databricks API to mint a database credential. It is not the PostgreSQL connection string.
 - `LAKEBASE_PGHOST`
 - `LAKEBASE_PGPORT`, usually `5432`
-- `LAKEBASE_DATABASE`, for example `db_app_aoc_app_template_nextjs_dev`
-- `LAKEBASE_USER`, usually the Databricks service principal application ID for an OAuth service-principal role
+
+The workflow derives:
+
+- `LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}`
+- `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 The PostgreSQL connection string from the Lakebase Connect dialog looks like:
 
@@ -117,8 +123,8 @@ postgresql://<user>@<host>/<database>?sslmode=require
 For that value:
 
 - `LAKEBASE_PGHOST` is the host after `@`, for example `ep-delicate-queen-e44918vp.database.australiaeast.azuredatabricks.net`.
-- `LAKEBASE_DATABASE` is the path after the host, for example `databricks_postgres`.
-- `LAKEBASE_USER` is the user before `@`. For the runtime proof this should match the OAuth Postgres role for the Databricks service principal, not a personal user, unless the proof intentionally uses a user identity.
+- The path after the host identifies the starter database exposed by the Connect dialog. The workflow does not use that database directly; it provisions a per-app database instead.
+- The user before `@` is not used for service-principal runtime connections. The workflow uses the Databricks service-principal application ID as the OAuth Postgres role.
 
 Use a two-level fallback when connecting to Lakebase:
 
@@ -133,7 +139,7 @@ Use a two-level fallback when connecting to Lakebase:
 3. Provision or reference a dev Container App.
 4. Configure GitHub Environment secrets.
 5. Configure Databricks service principal or federated auth for the proof.
-6. Create or reference a Lakebase database named with the `db_app_<app>_<env>` convention.
+6. Create or reference a Lakebase database named with the `db-app-<app>-<env>` convention.
 7. Create an `app_audit_events` table.
 8. Implement a Lakebase connection using SSL and short-lived credentials.
 9. Implement the Databricks OAuth two-secret fallback.

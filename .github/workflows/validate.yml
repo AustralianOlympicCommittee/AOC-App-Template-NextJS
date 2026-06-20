@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck and build
+      - name: Validate app contract, typecheck and build
         run: npm run check
 
       - name: Validate required documentation
@@ -35,6 +35,8 @@ jobs:
             docs/data-model.md \
             docs/security.md \
             docs/audit.md \
+            docs/app-contract.md \
+            docs/progress.md \
             docs/runbook.md \
             docs/support.md \
             docs/user-guide.md \

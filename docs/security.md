@@ -39,21 +39,30 @@ Expected GitHub Environment variables:
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_LOCATION`
-- `LAKEBASE_SHARED_PROJECT_NAME`
 - `LAKEBASE_ENDPOINT_PATH`
 - `LAKEBASE_PGHOST`
 - `LAKEBASE_PGPORT`
-- `LAKEBASE_DATABASE`
-- `LAKEBASE_USER`
 
 `LAKEBASE_ENDPOINT_PATH` is the Databricks endpoint resource path used to mint a database credential, for example `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. It is not the PostgreSQL connection string.
 
+`LAKEBASE_DATABASE` and `LAKEBASE_USER` are derived by the deployment workflow:
+
+- `LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}`
+- `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
+
 For Phase 0, the current repository-level Databricks secrets are:
 
+- `AZURE_CLIENT_ID`
+- `AZURE_LOCATION`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_TENANT_ID`
 - `DATABRICKS_HOST`
 - `DATABRICKS_CLIENT_ID`
 - `DATABRICKS_OAUTH_SECRET_1`
 - `DATABRICKS_OAUTH_SECRET_2`
+- `LAKEBASE_ENDPOINT_PATH`
+- `LAKEBASE_PGHOST`
+- `LAKEBASE_PGPORT`
 
 This is acceptable for the proof of concept. The application should try `DATABRICKS_OAUTH_SECRET_1` first and, if token minting or connection fails for an authentication-related reason, retry once with `DATABRICKS_OAUTH_SECRET_2` before failing the request. The later platform model should move non-secret values such as host and client ID to GitHub variables, and move reusable platform values to organisation or environment scope.
 

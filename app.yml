@@ -29,11 +29,11 @@ runtime:
   health_path: /api/health
   container_app_mode: combined
   split_runtime_exception: false
-  public_ingress: false
+  public_ingress: true
 
 hosting:
-  azure_deployment: false
-  environment: local
+  azure_deployment: true
+  environment: dev
   production: false
   location: australiaeast
   azure_tenant_id: 8f38a566-2ac4-45fd-b5bd-f8097b849ee6
@@ -75,7 +75,7 @@ database:
   shared_lakebase_project_uid: b27afc57-8f3f-400a-96bf-86e92e82938e
   dedicated_lakebase_project_required: false
   dedicated_lakebase_project_approval_required: true
-  database_name: db_app_aoc_app_template_nextjs_dev
+  database_name: db-app-aoc-app-template-nextjs-dev
   environment_database_model: database_per_app_environment
   endpoint_path_variable: LAKEBASE_ENDPOINT_PATH
   pg_host_variable: LAKEBASE_PGHOST
@@ -131,18 +131,21 @@ deployment:
     - AZURE_SUBSCRIPTION_ID
     - DATABRICKS_HOST
     - DATABRICKS_CLIENT_ID
-    - LAKEBASE_SHARED_PROJECT_NAME
-    - CONTAINER_REGISTRY_LOGIN_SERVER
     - LAKEBASE_ENDPOINT_PATH
     - LAKEBASE_PGHOST
     - LAKEBASE_PGPORT
-    - LAKEBASE_DATABASE
-    - LAKEBASE_USER
   current_phase_0_repo_secrets:
+    - AZURE_CLIENT_ID
+    - AZURE_LOCATION
+    - AZURE_SUBSCRIPTION_ID
+    - AZURE_TENANT_ID
     - DATABRICKS_HOST
     - DATABRICKS_CLIENT_ID
     - DATABRICKS_OAUTH_SECRET_1
     - DATABRICKS_OAUTH_SECRET_2
+    - LAKEBASE_ENDPOINT_PATH
+    - LAKEBASE_PGHOST
+    - LAKEBASE_PGPORT
 
 lifecycle:
   expiry_date:

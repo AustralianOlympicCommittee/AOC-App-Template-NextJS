@@ -15,6 +15,19 @@ on:
     branches:
       - dev
       - main
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/phase-0-deploy.yml"
+      - "Dockerfile"
+      - "app.yml"
+      - "app/**"
+      - "lib/**"
+      - "next.config.ts"
+      - "package-lock.json"
+      - "package.json"
+      - "public/**"
+      - "scripts/provision-lakebase.mjs"
+      - "tsconfig.json"
 
 permissions:
   contents: read
@@ -52,7 +65,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck and build
+      - name: Validate app contract, typecheck and build
         run: npm run check
 
       - name: Resolve deployment names
@@ -61,7 +74,7 @@ jobs:
 
       - name: Provision Lakebase role and database
         shell: bash
-        run: node scripts/provision-lakebase-role.mjs
+        run: node scripts/provision-lakebase.mjs
 
       - name: Azure login
         uses: azure/login@v2

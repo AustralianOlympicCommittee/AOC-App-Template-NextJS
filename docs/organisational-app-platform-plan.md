@@ -144,7 +144,7 @@ Recommended GitHub secrets and variables:
 
 - Secrets: `DATABRICKS_OAUTH_SECRET_1`, `DATABRICKS_OAUTH_SECRET_2`
 - Future platform-dispatch secret: `AOC_PLATFORM_DISPATCH_TOKEN`
-- Variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION`, `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, `LAKEBASE_SHARED_PROJECT_NAME`, `LAKEBASE_ENDPOINT_PATH`, `LAKEBASE_PGHOST`, `LAKEBASE_PGPORT`, `LAKEBASE_DATABASE`, `LAKEBASE_USER`, `PLATFORM_DISPATCH_REPO`, and allowed container registry.
+- Variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_LOCATION`, `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, `LAKEBASE_ENDPOINT_PATH`, `LAKEBASE_PGHOST`, `LAKEBASE_PGPORT`, `PLATFORM_DISPATCH_REPO`, and allowed container registry.
 
 ### Application Deployment
 
@@ -554,12 +554,10 @@ Store these GitHub Environment or organisation variables later:
 - `LAKEBASE_ENDPOINT_PATH`
 - `LAKEBASE_PGHOST`
 - `LAKEBASE_PGPORT`
-- `LAKEBASE_DATABASE`
-- `LAKEBASE_USER`
 - `PLATFORM_DISPATCH_REPO`
 - `CONTAINER_REGISTRY_LOGIN_SERVER`
 
-`LAKEBASE_ENDPOINT_PATH` must be the Databricks endpoint resource path used for `generate-database-credential`, for example `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. The PostgreSQL URI from the Lakebase Connect dialog should be split into `LAKEBASE_PGHOST`, `LAKEBASE_DATABASE`, and `LAKEBASE_USER`.
+`LAKEBASE_ENDPOINT_PATH` must be the Databricks endpoint resource path used for `generate-database-credential`, for example `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. The PostgreSQL URI from the Lakebase Connect dialog supplies `LAKEBASE_PGHOST`, but the workflow derives the runtime database and user from the app/environment and Databricks service-principal application ID.
 
 Current Phase 0 repository secrets already created:
 
