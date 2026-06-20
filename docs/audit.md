@@ -28,6 +28,8 @@ Required events include:
 
 Recommended table name: `app_audit_events`.
 
+The deployment workflow owns this schema. It runs `npm run migrate:audit` after Lakebase role and database provisioning and before the Container App revision is deployed. Runtime request handling must not create or alter the audit table; it should only insert audit events into the table named by `AUDIT_TABLE_NAME`.
+
 Recommended fields:
 
 | Field | Purpose |
@@ -91,7 +93,7 @@ Do not implement automatic deletion of audit rows without explicit approval and 
 When adding authentication, data mutation, admin functions, exports, sensitive data or shared Databricks data:
 
 1. Update this document.
-2. Add or update the audit table migration.
+2. Add or update `scripts/migrate-lakebase-audit.mjs`.
 3. Add or update structured audit log emission.
 4. Confirm no sensitive payloads are logged.
 5. Add tests for audit writes where practical.

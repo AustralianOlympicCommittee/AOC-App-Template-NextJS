@@ -45,9 +45,9 @@ Expected GitHub Environment variables:
 
 `LAKEBASE_ENDPOINT_PATH` is the Databricks endpoint resource path used to mint a database credential, for example `projects/{project-id}/branches/{branch-id}/endpoints/{endpoint-id}`. It is not the PostgreSQL connection string.
 
-`LAKEBASE_DATABASE` and `LAKEBASE_USER` are derived by the deployment workflow:
+`LAKEBASE_DATABASE` and `LAKEBASE_USER` are derived by the generated deployment manifest and exported by the deployment workflow:
 
-- `LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}`
+- `LAKEBASE_DATABASE=db-app-<app>-<env>`
 - `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 For Phase 0, the current repository-level Databricks secrets are:

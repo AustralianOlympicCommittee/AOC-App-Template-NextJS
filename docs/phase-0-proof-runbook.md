@@ -111,7 +111,7 @@ Lakebase connection values used from the Lakebase Connect dialog:
 
 The workflow derives:
 
-- `LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}`
+- `LAKEBASE_DATABASE=db-app-<app>-<env>`
 - `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 The PostgreSQL connection string from the Lakebase Connect dialog looks like:
@@ -139,17 +139,18 @@ Use a two-level fallback when connecting to Lakebase:
 3. Provision or reference a dev Container App.
 4. Configure GitHub Environment secrets.
 5. Configure Databricks service principal or federated auth for the proof.
-6. Create or reference a Lakebase database named with the `db-app-<app>-<env>` convention.
-7. Create an `app_audit_events` table.
-8. Implement a Lakebase connection using SSL and short-lived credentials.
-9. Implement the Databricks OAuth two-secret fallback.
-10. Implement an audit writer that inserts into Lakebase.
-11. Emit the same audit event as structured JSON to stdout.
-12. Deploy to the dev Container App.
-13. Call `/api/health` and `/api/audit-test`.
-14. Confirm the audit row exists in Lakebase.
-15. Confirm the structured audit event appears in Log Analytics.
-16. Document failures, gaps and required platform decisions.
+6. Generate the deployment manifest from `app.yml`.
+7. Create or reference a Lakebase database named with the `db-app-<app>-<env>` convention.
+8. Run the Lakebase audit migration to create the `app_audit_events` table.
+9. Implement a Lakebase connection using SSL and short-lived credentials.
+10. Implement the Databricks OAuth two-secret fallback.
+11. Implement an audit writer that inserts into Lakebase.
+12. Emit the same audit event as structured JSON to stdout.
+13. Deploy to the dev Container App.
+14. Call `/api/health` and `/api/audit-test`.
+15. Confirm the audit row exists in Lakebase.
+16. Confirm the structured audit event appears in Log Analytics.
+17. Document failures, gaps and required platform decisions.
 
 ## Success Criteria
 

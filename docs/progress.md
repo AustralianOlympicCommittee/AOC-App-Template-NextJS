@@ -57,3 +57,36 @@ Verification:
 Remaining follow-up:
 
 - Later phases should move more deployment values from Bash constants into `app.yml` or a generated deployment manifest.
+
+## Phase 1B - Deployment Manifest and Audit Migration
+
+Status: locally verified; GitHub Actions verification pending after push.
+
+Scope:
+
+- Generate deployment names and workflow environment values from `app.yml`.
+- Use the generated deployment manifest in the GitHub Actions deployment workflow.
+- Move Lakebase audit table creation out of runtime request handling and into the deployment migration path.
+- Keep the migration and manifest generation resumable from documented commands if automation is interrupted.
+
+Implementation record:
+
+- Added a shared scoped `app.yml` contract reader in `scripts/app-contract.mjs`.
+- Added `scripts/generate-deployment-manifest.mjs` to create `.generated/deployment-manifest.json` and export workflow environment values when explicitly requested.
+- Updated `.github/workflows/phase-0-deploy.yml` so deployment names, Lakebase database name, Lakebase user, health path and audit table name come from the generated manifest.
+- Added `scripts/migrate-lakebase-audit.mjs` and moved audit table creation out of runtime request handling.
+- Updated `lib/audit.ts` so runtime inserts only into the configured audit table.
+- Updated documentation in `docs/app-contract.md`, `docs/audit.md`, `docs/runbook.md`, `docs/security.md` and `docs/phase-0-proof-runbook.md`.
+
+Local verification:
+
+- `npm run validate:contract` passed.
+- `npm run check:scripts` passed.
+- `npm run validate:manifest` passed and generated the expected `dev` manifest.
+- `node scripts/generate-deployment-manifest.mjs --environment prod --output .generated/deployment-manifest-prod.json` generated the expected `prod` names.
+- `npm run check` passed, including TypeScript and the Next.js production build.
+
+Pending verification after push:
+
+- GitHub Actions Validate should pass on `dev`.
+- GitHub Actions Phase 0 Deploy should run the Lakebase audit migration and then verify `/api/health` and `/api/audit-test`.

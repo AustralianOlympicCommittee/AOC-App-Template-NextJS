@@ -30,12 +30,15 @@ Container images should be pushed to `acraocappsprod.azurecr.io` with immutable 
 Expected sequence:
 
 1. Validate `app.yml`.
-2. Run lint, typecheck and tests.
-3. Build the container image.
-4. Push the image to the approved registry.
-5. Deploy a new Container App revision.
-6. Run health checks.
-7. Record deployment evidence.
+2. Syntax-check deployment scripts, typecheck and build.
+3. Generate `.generated/deployment-manifest.json` from `app.yml`.
+4. Provision the Lakebase service-principal role and per-environment app database.
+5. Run the Lakebase audit migration.
+6. Build the container image.
+7. Push the image to the approved registry.
+8. Deploy a new Container App revision.
+9. Run health and audit endpoint checks.
+10. Record deployment evidence.
 
 ## Rollback
 
@@ -44,6 +47,14 @@ Rollback should use Azure Container Apps revisions. Do not rebuild an older comm
 ## Database Migration
 
 Run migrations through the controlled workflow identity. Do not run production migrations manually from a local device.
+
+Current migration command:
+
+```bash
+npm run migrate:audit
+```
+
+This creates the `app_audit_events` table and its timestamp index in the Lakebase app database before the container revision is deployed.
 
 ## Audit Verification
 

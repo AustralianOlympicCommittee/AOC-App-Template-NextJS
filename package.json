@@ -7,8 +7,13 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "check:scripts": "node --check scripts/app-contract.mjs && node --check scripts/generate-deployment-manifest.mjs && node --check scripts/migrate-lakebase-audit.mjs && node --check scripts/provision-lakebase.mjs && node --check scripts/validate-app-contract.mjs",
     "validate:contract": "node scripts/validate-app-contract.mjs",
-    "check": "npm run validate:contract && npm run typecheck && npm run build"
+    "validate:manifest": "node scripts/generate-deployment-manifest.mjs --environment dev",
+    "generate:manifest": "node scripts/generate-deployment-manifest.mjs",
+    "migrate:audit": "node scripts/migrate-lakebase-audit.mjs",
+    "db:migrate": "npm run migrate:audit",
+    "check": "npm run validate:contract && npm run check:scripts && npm run validate:manifest && npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "16.2.9",

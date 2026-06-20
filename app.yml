@@ -89,7 +89,7 @@ database:
     - DATABRICKS_OAUTH_SECRET_1
     - DATABRICKS_OAUTH_SECRET_2
   oauth_secret_fallback_required: true
-  migration_command: npm run db:migrate
+  migration_command: npm run migrate:audit
   service_principals:
     runtime_db_reader: sp-app-aoc-app-template-nextjs-dev-dbreader
     migration_db_owner: sp-app-aoc-app-template-nextjs-dev-dbowner

@@ -1,5 +1,6 @@
 .env
 .env*.local
+.generated/
 .next/
 node_modules/
 npm-debug.log*

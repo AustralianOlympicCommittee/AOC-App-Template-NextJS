@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Client } from "pg";
+import { ConfigurationError } from "./errors";
 import { withLakebaseClient } from "./lakebase";
 import { logStructured } from "./logging";
 
@@ -53,10 +53,10 @@ export function createAuditEvent(input: AuditEventInput): AuditEvent {
 export async function writeAuditEvent(event: AuditEvent) {
   emitAuditLog(event);
 
+  const auditTable = auditTableIdentifier();
   const session = await withLakebaseClient(async (client) => {
-    await ensureAuditTable(client);
     await client.query(
-      `INSERT INTO app_audit_events (
+      `INSERT INTO ${auditTable} (
         event_id,
         occurred_at,
         actor_user_id,
@@ -103,22 +103,12 @@ function emitAuditLog(event: AuditEvent) {
   });
 }
 
-async function ensureAuditTable(client: Client) {
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS app_audit_events (
-      event_id uuid PRIMARY KEY,
-      occurred_at timestamptz NOT NULL,
-      actor_user_id text NOT NULL,
-      actor_display_name text NOT NULL,
-      actor_roles text[] NOT NULL,
-      action text NOT NULL,
-      resource_type text NOT NULL,
-      resource_id text NOT NULL,
-      environment text NOT NULL,
-      request_id text NOT NULL,
-      source_ip_hash text,
-      result text NOT NULL CHECK (result IN ('success', 'failure', 'denied', 'error')),
-      metadata_json jsonb NOT NULL DEFAULT '{}'::jsonb
-    )
-  `);
+function auditTableIdentifier() {
+  const tableName = process.env.AUDIT_TABLE_NAME?.trim() || "app_audit_events";
+  if (!/^[a-z][a-z0-9_]*$/.test(tableName)) {
+    throw new ConfigurationError(
+      "AUDIT_TABLE_NAME must use lowercase letters, numbers and underscores."
+    );
+  }
+  return `"${tableName}"`;
 }

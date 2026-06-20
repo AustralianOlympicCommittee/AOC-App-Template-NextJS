@@ -26,19 +26,16 @@ on:
       - "package-lock.json"
       - "package.json"
       - "public/**"
+      - "scripts/app-contract.mjs"
+      - "scripts/generate-deployment-manifest.mjs"
+      - "scripts/migrate-lakebase-audit.mjs"
       - "scripts/provision-lakebase.mjs"
+      - "scripts/validate-app-contract.mjs"
       - "tsconfig.json"
 
 permissions:
   contents: read
   id-token: write
-
-env:
-  APP_SLUG: aoc-app-template-nextjs
-  ACR_NAME: acraocappsprod
-  ACR_LOGIN_SERVER: acraocappsprod.azurecr.io
-  LOG_ANALYTICS_RG: loganalytics
-  LOG_ANALYTICS_NAME: AOCLogAnalytics
 
 jobs:
   deploy:
@@ -68,13 +65,17 @@ jobs:
       - name: Validate app contract, typecheck and build
         run: npm run check
 
-      - name: Resolve deployment names
+      - name: Generate deployment manifest
         shell: bash
-        run: echo "LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}" >> "$GITHUB_ENV"
+        run: node scripts/generate-deployment-manifest.mjs --environment "${DEPLOY_ENV}" --github-env "$GITHUB_ENV"
 
       - name: Provision Lakebase role and database
         shell: bash
         run: node scripts/provision-lakebase.mjs
+
+      - name: Run Lakebase audit migration
+        shell: bash
+        run: node scripts/migrate-lakebase-audit.mjs
 
       - name: Azure login
         uses: azure/login@v2
@@ -97,11 +98,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          RESOURCE_GROUP="rg-app-${APP_SLUG}-${DEPLOY_ENV}"
-          CONTAINER_ENV="cae-${APP_SLUG}-${DEPLOY_ENV}"
-          CONTAINER_APP="ca-${APP_SLUG}-${DEPLOY_ENV}"
-          IDENTITY_NAME="id-app-${APP_SLUG}-${DEPLOY_ENV}"
 
           az group show --name "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null
 
@@ -154,6 +150,7 @@ jobs:
           COMMON_ENV_VARS=(
             "APP_NAME=${APP_SLUG}"
             "APP_ENVIRONMENT=${DEPLOY_ENV}"
+            "AUDIT_TABLE_NAME=${AUDIT_TABLE_NAME}"
             "DATABRICKS_HOST=${DATABRICKS_HOST}"
             "DATABRICKS_CLIENT_ID=${DATABRICKS_CLIENT_ID}"
             "DATABRICKS_OAUTH_SECRET_1=secretref:databricks-oauth-secret-1"
@@ -162,7 +159,7 @@ jobs:
             "LAKEBASE_PGHOST=${LAKEBASE_PGHOST}"
             "LAKEBASE_PGPORT=${LAKEBASE_PGPORT}"
             "LAKEBASE_DATABASE=${LAKEBASE_DATABASE}"
-            "LAKEBASE_USER=${DATABRICKS_CLIENT_ID}"
+            "LAKEBASE_USER=${LAKEBASE_USER}"
           )
 
           if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
@@ -246,7 +243,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent "${APP_URL}/api/health"
+          curl --fail --show-error --silent "${APP_URL}${HEALTH_PATH}"
 
       - name: Verify audit endpoint when Lakebase variables are present
         shell: bash
