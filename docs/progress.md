@@ -173,7 +173,7 @@ Known gap:
 
 ## Phase 1D - Runtime Entra Enforcement
 
-Status: in progress; local implementation added and remote deployment verification pending.
+Status: complete for automated Phase 1D proof; browser sign-in with a real assigned user remains as a manual access test.
 
 Scope:
 
@@ -211,11 +211,18 @@ Verification so far:
 - After the origin fix deployment, direct `/api/auth/login` used the public Container App FQDN in the Entra `redirect_uri`.
 - The app registration had two `aoc-runtime-auth-dev` password credentials after two Phase 1D deployments.
 - Added post-deployment stale runtime credential cleanup so the active revision's credential is retained and older generated credentials are removed.
+- GitHub Actions Validate run `27990736469` passed on commit `f6a4b0fd74d31a88a24062437940835a8e01e226`.
+- GitHub Actions Phase 0 Deploy run `27990736432` failed after Container App deployment while removing stale Entra credentials because Microsoft Graph returned `Directory_ConcurrencyViolation`.
+- Added retry/backoff for stale runtime credential removal and classified Graph directory concurrency violations as retriable.
+- GitHub Actions Validate run `27991009209` passed on commit `f1b7fe9609c74e8510ddcdef4d89fdfe28647539`.
+- GitHub Actions Phase 0 Deploy run `27991009235` passed on commit `f1b7fe9609c74e8510ddcdef4d89fdfe28647539`.
+- Direct `/api/health` returned `status: ok`, `runtime.auth.runtime_authentication: true`, `runtime.auth.entra_client_configured: true`, `runtime.auth.session_secret_configured: true` and `runtime.lakebase_configured: true`.
+- Direct unauthenticated `/api/auth/me` returned 401.
+- Direct unauthenticated `/api/audit-test` returned 401 with `authentication_required`.
+- Direct `/api/auth/login` returned 307 to Entra with `redirect_uri=https://ca-aoc-app-template-nextjs-dev.wonderfulcoast-169bb999.australiaeast.azurecontainerapps.io/api/auth/callback/entra`.
+- The Entra app registration now has one `aoc-runtime-auth-dev` password credential for the active revision.
+- Azure Container App `ca-aoc-app-template-nextjs-dev` is provisioned successfully at revision `ca-aoc-app-template-nextjs-dev--0000015`.
 
 Remaining verification:
 
-- Confirm `/api/health` remains public.
-- Confirm `/api/audit-test` succeeds only with deployment verification or an authenticated `App.Admin` session.
-- Confirm the Entra app registration contains the deployed callback URI.
-- Confirm `/api/auth/login` uses the public Container App FQDN as its Entra `redirect_uri`.
-- Confirm app registration runtime credential cleanup leaves only the active `aoc-runtime-auth-dev` credential.
+- Complete an interactive browser sign-in using a real user assigned to one of the app Entra groups, then confirm the session roles and `App.Admin` access path.
