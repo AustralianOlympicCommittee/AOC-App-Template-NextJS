@@ -99,7 +99,7 @@ Remaining follow-up:
 
 ## Phase 1C - Entra And Access Provisioning Contract
 
-Status: in progress; deployment identity configured and remote deployment verification pending.
+Status: complete for the initial Entra and access provisioning pass.
 
 Scope:
 
@@ -117,6 +117,9 @@ Implementation record:
 - Updated `app.yml` so Entra app registration and Enterprise Application provisioning are required.
 - Added [identity.md](identity.md) and updated the app contract, architecture, security, runbook, oversight and agent guidance documents.
 - Added `npm run validate:identity` for dry-run identity plans and `npm run provision:entra` for real provisioning after Azure login.
+- Added targeted Microsoft Graph retry handling for newly-created Enterprise Applications and security groups while Graph replication catches up.
+- Serialised Phase 0 deployment runs by branch and environment to prevent concurrent push/manual deploys from racing over the same Entra app-role assignments.
+- Treated Graph's duplicate `EntitlementGrant entry already exists` response as an idempotent app-role assignment outcome after re-reading the assignment.
 
 Local verification:
 
@@ -134,6 +137,15 @@ Remote verification:
 - GitHub Actions Validate run `27866287494` passed.
 - GitHub Actions Phase 0 Deploy run `27866287493` failed at `Provision Entra app registration, Enterprise Application and app groups`.
 - The failing Microsoft Graph request was `GET /applications` with `Authorization_RequestDenied` and `Insufficient privileges to complete the operation`.
+- Commit `0921ae3e40b7452230ddf40864fd4e47c019c862` recorded the deployment identity setup evidence.
+- GitHub Actions Phase 0 Deploy run `27923206949` proved GitHub OIDC login with the new deployment identity, then failed on Microsoft Graph replication delay after creating the Enterprise Application.
+- Commit `a93f90d177a780290421bba3554fddbd2375d844` added targeted Graph propagation retries.
+- GitHub Actions Phase 0 Deploy run `27923338889` passed end to end from manual dispatch.
+- The automatic push deploy run `27923333597` for the same commit failed because it overlapped with the manual dispatch and both runs attempted the same app-role assignment.
+- Commit `4aa4fe95c9617a6289544ba395445567530306d8` serialised deploys and made duplicate app-role assignment conflicts idempotent.
+- GitHub Actions Validate run `27931495666` passed on commit `4aa4fe95c9617a6289544ba395445567530306d8`.
+- GitHub Actions Phase 0 Deploy run `27931495681` passed on commit `4aa4fe95c9617a6289544ba395445567530306d8`.
+- The passing deploy run completed Azure login, Entra app registration and Enterprise Application provisioning, Entra group provisioning, group-to-app-role assignments, Lakebase role/database provisioning, audit migration, image build/push, Container App deployment, `/api/health` verification and `/api/audit-test` verification.
 
 Deployment identity setup:
 
@@ -146,10 +158,14 @@ Deployment identity setup:
 - Ensured GitHub environments `dev` and `prod` exist.
 - Updated GitHub repo secret `AZURE_CLIENT_ID` to the deployment app registration client ID.
 
-Resume steps:
+Provisioned app identity evidence:
 
-- Re-run GitHub Actions Phase 0 Deploy for the current `dev` commit.
-- If the Entra step passes, continue watching Lakebase provisioning, audit migration, Container App deployment, health verification and audit endpoint verification.
+- App registration: `app-aoc-app-template-nextjs-dev`, client ID `90fe7c34-d0b5-42d1-a3bb-d7524ccaffd3`.
+- Enterprise Application object ID: `d53d623b-49a9-4fb0-a2ba-ae06e6970930`, with assignment required.
+- Entra groups provisioned and assigned:
+  - `app-aoc-app-template-nextjs-dev-read` -> `App.Read`
+  - `app-aoc-app-template-nextjs-dev-write` -> `App.Write`
+  - `app-aoc-app-template-nextjs-dev-admin` -> `App.Admin`
 
 Known gap:
 
