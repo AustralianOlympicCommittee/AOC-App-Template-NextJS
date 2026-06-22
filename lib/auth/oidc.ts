@@ -83,13 +83,13 @@ export async function completeCodeFlow(request: NextRequest, transaction: AuthTr
 }
 
 export function callbackUrl(request: NextRequest) {
-  return new URL("/api/auth/callback/entra", request.nextUrl.origin).toString();
+  return new URL("/api/auth/callback/entra", publicOrigin(request)).toString();
 }
 
 export function logoutUrl(request: NextRequest) {
   const config = getAuthConfig();
   const url = new URL(`${config.authority}/oauth2/v2.0/logout`);
-  url.searchParams.set("post_logout_redirect_uri", new URL("/", request.nextUrl.origin).toString());
+  url.searchParams.set("post_logout_redirect_uri", new URL("/", publicOrigin(request)).toString());
   return url;
 }
 
@@ -258,6 +258,25 @@ function safeReturnTo(value: string) {
   return value;
 }
 
+function publicOrigin(request: NextRequest) {
+  const forwardedHost = firstForwardedValue(request.headers.get("x-forwarded-host"));
+  const forwardedProto = firstForwardedValue(request.headers.get("x-forwarded-proto"));
+  if (forwardedHost) {
+    return `${forwardedProto || "https"}://${forwardedHost}`;
+  }
+
+  const host = request.headers.get("host");
+  if (host && !host.startsWith("0.0.0.0")) {
+    return `${forwardedProto || request.nextUrl.protocol.replace(/:$/, "")}://${host}`;
+  }
+
+  return request.nextUrl.origin;
+}
+
+function firstForwardedValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || "";
+}
+
 function stringClaim(claims: Record<string, unknown>, key: string) {
   const value = claims[key];
   return typeof value === "string" ? value : "";
@@ -275,4 +294,3 @@ function optionalNumberClaim(claims: Record<string, unknown>, key: string) {
   const value = claims[key];
   return typeof value === "number" ? value : undefined;
 }
-

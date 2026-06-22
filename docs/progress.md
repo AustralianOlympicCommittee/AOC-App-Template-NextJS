@@ -195,16 +195,23 @@ Implementation record:
 - Added a post-deployment Entra provisioning pass so the app registration redirect URI is refreshed after the Container App FQDN is known.
 - Updated contract, identity, security, runbook and decommission documentation.
 
-Local verification so far:
+Verification so far:
 
 - `npm run check:scripts` passed.
 - `npm run typecheck` passed.
 - `npm run check` passed, including contract validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
 - GitHub repo secret `AUTH_SESSION_SECRET` was created without printing its value.
+- GitHub Actions Validate run `27934990281` passed on commit `22aae2a3d6890bc1d84f251beb53a8c2e8042817`.
+- GitHub Actions Phase 0 Deploy run `27934990276` passed on commit `22aae2a3d6890bc1d84f251beb53a8c2e8042817`.
+- Direct `/api/health` returned 200 and showed auth plus Lakebase runtime configuration.
+- Direct unauthenticated `/api/auth/me` returned 401.
+- Direct unauthenticated `/api/audit-test` returned 401.
+- Direct `/api/auth/login` returned an Entra redirect, but the first implementation used the internal Container Apps origin `https://0.0.0.0:3000` for `redirect_uri`.
+- Updated runtime origin detection to prefer `x-forwarded-host` and `x-forwarded-proto` before falling back to the internal Next.js origin.
 
 Remaining verification:
 
-- Push to `dev` and verify GitHub Actions Validate and Phase 0 Deploy.
 - Confirm `/api/health` remains public.
 - Confirm `/api/audit-test` succeeds only with deployment verification or an authenticated `App.Admin` session.
 - Confirm the Entra app registration contains the deployed callback URI.
+- Confirm `/api/auth/login` uses the public Container App FQDN as its Entra `redirect_uri`.
