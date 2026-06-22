@@ -99,7 +99,7 @@ function buildIdentityPlan(manifest) {
 
 async function provisionIdentity(plan) {
   const application = ensureApplication(plan);
-  const runtimeClientSecret = ensureRuntimeClientSecret(plan, application);
+  const runtimeClientSecret = await ensureRuntimeClientSecret(plan, application);
   const servicePrincipal = await ensureServicePrincipal(plan, application);
   const appRoles = appRolesForAssignment(plan.entra.app_roles, servicePrincipal);
   const groups = [];
@@ -222,7 +222,7 @@ function ensureApplication(plan) {
   );
 }
 
-function ensureRuntimeClientSecret(plan, application) {
+async function ensureRuntimeClientSecret(plan, application) {
   const configuredSecret = process.env.ENTRA_CLIENT_SECRET?.trim();
   const configuredKeyId = process.env.ENTRA_CLIENT_SECRET_KEY_ID?.trim();
   const displayName = `aoc-runtime-auth-${plan.environment}`;
@@ -237,7 +237,7 @@ function ensureRuntimeClientSecret(plan, application) {
       );
 
     if (configuredKeyId && process.env.ENTRA_CLEANUP_STALE_CLIENT_SECRETS === "true") {
-      cleanupRuntimeClientSecrets(application, displayName, configuredKeyId);
+      await cleanupRuntimeClientSecrets(application, displayName, configuredKeyId);
     }
 
     return {
@@ -269,17 +269,26 @@ function ensureRuntimeClientSecret(plan, application) {
   };
 }
 
-function cleanupRuntimeClientSecrets(application, displayName, currentKeyId) {
+async function cleanupRuntimeClientSecrets(application, displayName, currentKeyId) {
   const staleCredentials = (application.passwordCredentials ?? []).filter(
     (credential) =>
       credential.displayName === displayName && !sameGuid(credential.keyId, currentKeyId)
   );
 
   for (const credential of staleCredentials) {
-    graphRequest("POST", graphUrl(`/applications/${application.id}/removePassword`), {
-      keyId: credential.keyId
-    });
+    await graphRequestWithRetry(
+      "POST",
+      graphUrl(`/applications/${application.id}/removePassword`),
+      {
+        keyId: credential.keyId
+      },
+      {
+        description: `remove stale runtime Entra client secret ${credential.keyId}`,
+        delayMs: 7000
+      }
+    );
     console.log(`Removed stale runtime Entra client secret ${credential.keyId} from ${application.displayName}.`);
+    await delay(3000);
   }
 }
 
@@ -514,6 +523,7 @@ function isRetriableGraphError(error) {
   const message = error instanceof Error ? error.message : String(error);
   return (
     message.includes("Request_ResourceNotFound") ||
+    message.includes("Directory_ConcurrencyViolation") ||
     message.includes("TooManyRequests") ||
     message.includes("temporarily unavailable") ||
     /\\b(429|500|502|503|504)\\b/.test(message)
