@@ -330,20 +330,47 @@ async function ensureGroupAppRoleAssignment(servicePrincipal, group, role) {
     );
   }
 
-  const created = await graphRequestWithRetry(
-    "POST",
-    graphUrl(`/groups/${group.id}/appRoleAssignments`),
-    {
-      appRoleId: role.id,
-      principalId: group.id,
-      resourceId: servicePrincipal.id
-    },
-    {
-      description: `group ${group.displayName} app-role assignment to become writable`
+  try {
+    const created = await graphRequestWithRetry(
+      "POST",
+      graphUrl(`/groups/${group.id}/appRoleAssignments`),
+      {
+        appRoleId: role.id,
+        principalId: group.id,
+        resourceId: servicePrincipal.id
+      },
+      {
+        description: `group ${group.displayName} app-role assignment to become writable`
+      }
+    );
+    console.log(`Assigned ${group.displayName} to app role ${role.value}.`);
+    return created;
+  } catch (error) {
+    if (!isExistingAppRoleAssignmentConflict(error)) {
+      throw error;
     }
-  );
-  console.log(`Assigned ${group.displayName} to app role ${role.value}.`);
-  return created;
+
+    const refreshedAssignments = await graphCollectionWithRetry(
+      graphUrl(`/groups/${group.id}/appRoleAssignments`, {
+        $select: "id,appRoleId,principalId,resourceId"
+      }),
+      {
+        description: `group ${group.displayName} app-role assignments after assignment conflict`
+      }
+    );
+    const existingAfterConflict = refreshedAssignments.find(
+      (assignment) =>
+        sameGuid(assignment.resourceId, servicePrincipal.id) &&
+        sameGuid(assignment.appRoleId, role.id)
+    );
+
+    if (!existingAfterConflict) {
+      throw error;
+    }
+
+    console.log(`Group ${group.displayName} already has app role ${role.value}.`);
+    return existingAfterConflict;
+  }
 }
 
 function graphCollection(url) {
@@ -419,6 +446,14 @@ function isRetriableGraphError(error) {
     message.includes("TooManyRequests") ||
     message.includes("temporarily unavailable") ||
     /\\b(429|500|502|503|504)\\b/.test(message)
+  );
+}
+
+function isExistingAppRoleAssignmentConflict(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Request_MultipleObjectsWithSameKeyValue") &&
+    message.includes("EntitlementGrant entry already exists")
   );
 }
 

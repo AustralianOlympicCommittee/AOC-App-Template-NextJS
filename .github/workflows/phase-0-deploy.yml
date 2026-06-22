@@ -1,5 +1,9 @@
 name: Phase 0 Deploy
 
+concurrency:
+  group: phase-0-deploy-${{ github.ref_name }}-${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
