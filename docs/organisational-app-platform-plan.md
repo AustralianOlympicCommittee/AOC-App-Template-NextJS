@@ -513,6 +513,12 @@ Platform identity is allowed to create:
 - Groups named `app-*`: yes
 - Group assignments to enterprise apps: yes
 
+Production RBAC mitigation:
+
+- The current deployment service principal has `Contributor` on `rg-app-aoc-app-template-nextjs-dev`, plus the required platform ACR and Log Analytics roles.
+- `rg-app-aoc-app-template-nextjs-prod` does not exist yet. Before the first `main` to `prod` deployment, create the prod app resource group and grant the deployment service principal `Contributor` on that resource group.
+- Treat this as a production readiness gate: the prod deployment workflow must prove the role assignment exists before attempting Container Apps, identity, or monitoring changes in prod.
+
 ### GitHub
 
 - Target GitHub org: `AustralianOlympicCommittee`
