@@ -170,3 +170,41 @@ Provisioned app identity evidence:
 Known gap:
 
 - `rg-app-aoc-app-template-nextjs-prod` does not exist yet, so the deployment identity does not yet have `Contributor` on the future prod resource group.
+
+## Phase 1D - Runtime Entra Enforcement
+
+Status: in progress; local implementation added and remote deployment verification pending.
+
+Scope:
+
+- Add Microsoft Entra sign-in for the Next.js runtime.
+- Validate Entra ID tokens against tenant OpenID Connect metadata and signing keys.
+- Store short-lived encrypted sessions without adding a new runtime dependency.
+- Enforce app roles for protected API routes.
+- Preserve non-interactive deployment verification for the Lakebase audit endpoint without making the endpoint public.
+- Include user and role context in app audit events.
+
+Implementation record:
+
+- Added `/api/auth/login`, `/api/auth/callback/entra`, `/api/auth/logout` and `/api/auth/me`.
+- Added dependency-free auth helpers for PKCE, Entra ID-token validation, encrypted session cookies and app-role hierarchy.
+- Updated the home page to show Entra session state and app-role assignments.
+- Protected `/api/audit-test` with `App.Admin`, with a short-lived deployment verification HMAC for GitHub Actions.
+- Updated Entra provisioning to create a runtime app registration credential and export only the secret value to the deployment environment, while persisting only credential metadata.
+- Updated deployment to inject `AUTH_SESSION_SECRET` and the generated `ENTRA_CLIENT_SECRET` into the Container App.
+- Added a post-deployment Entra provisioning pass so the app registration redirect URI is refreshed after the Container App FQDN is known.
+- Updated contract, identity, security, runbook and decommission documentation.
+
+Local verification so far:
+
+- `npm run check:scripts` passed.
+- `npm run typecheck` passed.
+- `npm run check` passed, including contract validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
+- GitHub repo secret `AUTH_SESSION_SECRET` was created without printing its value.
+
+Remaining verification:
+
+- Push to `dev` and verify GitHub Actions Validate and Phase 0 Deploy.
+- Confirm `/api/health` remains public.
+- Confirm `/api/audit-test` succeeds only with deployment verification or an authenticated `App.Admin` session.
+- Confirm the Entra app registration contains the deployed callback URI.

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAuditEvent, writeAuditEvent } from "../../../lib/audit";
+import { requireAppRole } from "../../../lib/auth/authorisation";
 import { isConfigurationError, sanitiseError } from "../../../lib/errors";
 import { logStructured } from "../../../lib/logging";
 
@@ -14,13 +15,19 @@ export async function POST(request: NextRequest) {
 }
 
 async function runAuditTest(request: NextRequest) {
+  const authorised = await requireAppRole(request, "App.Admin");
+  if (authorised instanceof NextResponse) {
+    return authorised;
+  }
+
   const event = createAuditEvent({
     action: "phase0.audit_test",
-    actorDisplayName: "Phase 0 proof endpoint",
-    actorRoles: ["App.Admin"],
-    actorUserId: "phase0-system",
+    actorDisplayName: authorised.user.displayName,
+    actorRoles: authorised.user.roles,
+    actorUserId: authorised.user.id,
     environment: process.env.APP_ENVIRONMENT ?? "dev",
     metadata: {
+      auth_mode: authorised.kind,
       method: request.method,
       user_agent: request.headers.get("user-agent") ?? "unknown"
     },

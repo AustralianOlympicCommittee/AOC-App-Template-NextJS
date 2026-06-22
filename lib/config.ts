@@ -1,4 +1,5 @@
 import { ConfigurationError } from "./errors";
+import { getAuthRuntimeSummary } from "./auth/config";
 
 export type LakebaseConfig = {
   appEnvironment: string;
@@ -22,6 +23,7 @@ export function getRuntimeSummary() {
   return {
     app_environment: process.env.APP_ENVIRONMENT ?? "dev",
     app_name: process.env.APP_NAME ?? "aoc-app-template-nextjs",
+    auth: getAuthRuntimeSummary(),
     lakebase_configured: hasAll([
       "DATABRICKS_HOST",
       "DATABRICKS_CLIENT_ID",

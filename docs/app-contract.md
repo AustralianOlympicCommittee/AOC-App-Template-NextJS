@@ -25,6 +25,7 @@
 - `identity.sign_in_audience` must be `AzureADMyOrg`.
 - `identity.assignment_required` must be `true`.
 - `identity.microsoft_graph_permissions` must be empty until oversight evidence exists.
+- `deployment.required_github_environment_secrets` must include `AUTH_SESSION_SECRET`, `DATABRICKS_OAUTH_SECRET_1` and `DATABRICKS_OAUTH_SECRET_2`.
 - `LAKEBASE_DATABASE` and `LAKEBASE_USER` are not required GitHub variables. The workflow derives them from app metadata and the Databricks service-principal application ID.
 - Databricks OAuth fallback must try `DATABRICKS_OAUTH_SECRET_1` before `DATABRICKS_OAUTH_SECRET_2`.
 - `database.migration_command` must be `npm run migrate:audit`.
@@ -64,7 +65,7 @@ Run real provisioning after Azure login:
 npm run provision:entra
 ```
 
-The deployment workflow runs real provisioning and exports Entra IDs for the Container App. See [identity.md](identity.md).
+The deployment workflow runs real provisioning and exports Entra IDs for the Container App. Phase 1D also creates a runtime app registration credential for the Entra code exchange, stores only non-secret metadata in the provisioning record, and injects the secret value into the Container App. See [identity.md](identity.md).
 
 ## Validation
 
@@ -81,4 +82,4 @@ It also syntax-checks the deployment scripts, generates the dev deployment manif
 
 - The validator is intentionally scoped to this template's `app.yml` shape rather than acting as a general YAML parser.
 - The deploy workflow now consumes a generated manifest, but it still provisions Azure resources through inline workflow commands rather than Bicep or a platform dispatch workflow.
-- Runtime Entra token validation and user sign-in enforcement are not implemented yet.
+- Runtime Entra token validation and user sign-in enforcement are implemented directly in the app for the proof. A later platform pass should evaluate whether this remains the standard approach or is replaced by a shared library or platform auth component.

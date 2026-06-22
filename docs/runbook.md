@@ -34,13 +34,15 @@ Expected sequence:
 3. Generate `.generated/deployment-manifest.json` from `app.yml`.
 4. Log in to Azure with the platform deployment identity.
 5. Provision the Entra app registration, Enterprise Application, app roles and app groups.
-6. Provision the Lakebase service-principal role and per-environment app database.
-7. Run the Lakebase audit migration.
-8. Build the container image.
-9. Push the image to the approved registry.
-10. Deploy a new Container App revision.
-11. Run health and audit endpoint checks.
-12. Record deployment evidence.
+6. Generate or reuse the runtime Entra client secret for the deployment job.
+7. Provision the Lakebase service-principal role and per-environment app database.
+8. Run the Lakebase audit migration.
+9. Build the container image.
+10. Push the image to the approved registry.
+11. Deploy a new Container App revision with Entra, session and Lakebase secrets.
+12. Refresh the Entra redirect URI after the Container App FQDN is known.
+13. Run health and audit endpoint checks. The audit endpoint check uses a short-lived HMAC header signed with `AUTH_SESSION_SECRET`; normal users must authenticate through Entra and hold `App.Admin`.
+14. Record deployment evidence.
 
 ## Rollback
 
@@ -74,6 +76,8 @@ npm run provision:entra
 
 The command creates or locates the app registration, Enterprise Application, app roles and app groups, then exports Entra IDs for the Container App. See [identity.md](identity.md).
 
+The real deployment path also creates a runtime app registration password credential for the Entra code exchange. The secret value is not written to generated files; it is passed to the Container App as `entra-client-secret`.
+
 ## Audit Verification
 
 For audit-capable apps, confirm:
@@ -81,6 +85,7 @@ For audit-capable apps, confirm:
 - A row exists in `app_audit_events`.
 - A matching structured event exists in Log Analytics.
 - The same `event_id` and `request_id` appear in both places.
+- User-triggered audit events include Entra user ID, display name and app-role context.
 
 ## Decommissioning
 

@@ -20,6 +20,7 @@ App environment: `aoc-app-template-nextjs-dev`
 | Azure | Managed identity | `id-app-aoc-app-template-nextjs-dev` | remove | Owned by the dev proof app resource group. |
 | Azure | Container image tags | `acraocappsprod.azurecr.io/aoc-app-template-nextjs:<commit-sha>` | review | Delete proof image tags only after confirming no active Container App revision references them. Keep the shared registry. |
 | Entra | App registration | `app-aoc-app-template-nextjs-dev` | remove | App registration for the proof app environment. |
+| Entra | Runtime client credential | `aoc-runtime-auth-dev` on `app-aoc-app-template-nextjs-dev` | remove | Created by deployment for the Entra code exchange. Deleting the app registration should remove it. |
 | Entra | Enterprise Application | `app-aoc-app-template-nextjs-dev` | remove | Service principal created from the proof app registration. |
 | Entra | Read group | `app-aoc-app-template-nextjs-dev-read` | remove | Confirm no real users or dependent tests still need access. |
 | Entra | Write group | `app-aoc-app-template-nextjs-dev-write` | remove | Confirm no real users or dependent tests still need access. |

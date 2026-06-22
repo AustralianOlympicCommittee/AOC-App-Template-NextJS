@@ -65,7 +65,7 @@ h1 {
 
 .links {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin: 28px 0 0;
 }
@@ -84,6 +84,76 @@ h1 {
 
 .links dd {
   margin: 0;
+}
+
+.session {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding: 16px;
+}
+
+.session > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.button {
+  background: var(--accent);
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  font-weight: 750;
+  justify-content: center;
+  min-width: 112px;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.button.secondary {
+  background: var(--ink);
+}
+
+.role-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.role-list span {
+  background: var(--accent-soft);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 6px 10px;
+}
+
+.notice {
+  background: #fff6e5;
+  border: 1px solid #e8cf9a;
+  border-radius: 8px;
+  color: #4c3615;
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  padding: 14px 16px;
 }
 
 .checklist {
@@ -135,6 +205,15 @@ h1 {
   .links,
   .checklist {
     grid-template-columns: 1fr;
+  }
+
+  .session {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-list {
+    justify-content: flex-start;
   }
 
   .checklist article {

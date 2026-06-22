@@ -55,6 +55,7 @@ jobs:
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID || vars.DATABRICKS_CLIENT_ID }}
       DATABRICKS_OAUTH_SECRET_1: ${{ secrets.DATABRICKS_OAUTH_SECRET_1 }}
       DATABRICKS_OAUTH_SECRET_2: ${{ secrets.DATABRICKS_OAUTH_SECRET_2 }}
+      AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
       LAKEBASE_ENDPOINT_PATH: ${{ secrets.LAKEBASE_ENDPOINT_PATH || vars.LAKEBASE_ENDPOINT_PATH }}
       LAKEBASE_PGHOST: ${{ secrets.LAKEBASE_PGHOST || vars.LAKEBASE_PGHOST }}
       LAKEBASE_PGPORT: ${{ secrets.LAKEBASE_PGPORT || vars.LAKEBASE_PGPORT || '5432' }}
@@ -161,6 +162,7 @@ jobs:
             "APP_NAME=${APP_SLUG}"
             "APP_ENVIRONMENT=${DEPLOY_ENV}"
             "AUDIT_TABLE_NAME=${AUDIT_TABLE_NAME}"
+            "AUTH_SESSION_SECRET=secretref:auth-session-secret"
             "DATABRICKS_HOST=${DATABRICKS_HOST}"
             "DATABRICKS_CLIENT_ID=${DATABRICKS_CLIENT_ID}"
             "DATABRICKS_OAUTH_SECRET_1=secretref:databricks-oauth-secret-1"
@@ -173,6 +175,7 @@ jobs:
             "ENTRA_APP_OBJECT_ID=${ENTRA_APP_OBJECT_ID}"
             "ENTRA_AUTHORITY=${ENTRA_AUTHORITY}"
             "ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}"
+            "ENTRA_CLIENT_SECRET=secretref:entra-client-secret"
             "ENTRA_SERVICE_PRINCIPAL_OBJECT_ID=${ENTRA_SERVICE_PRINCIPAL_OBJECT_ID}"
             "ENTRA_TENANT_ID=${ENTRA_TENANT_ID}"
             "ENTRA_READ_GROUP_ID=${ENTRA_READ_GROUP_ID}"
@@ -197,8 +200,10 @@ jobs:
               --registry-server "${ACR_LOGIN_SERVER}" \
               --registry-identity "${IDENTITY_ID}" \
               --secrets \
+                "auth-session-secret=${AUTH_SESSION_SECRET}" \
                 "databricks-oauth-secret-1=${DATABRICKS_OAUTH_SECRET_1}" \
                 "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}" \
+                "entra-client-secret=${ENTRA_CLIENT_SECRET}" \
               --env-vars "${COMMON_ENV_VARS[@]}"
           else
             az containerapp secret set \
@@ -206,8 +211,10 @@ jobs:
               --resource-group "${RESOURCE_GROUP}" \
               --subscription "${AZURE_SUBSCRIPTION_ID}" \
               --secrets \
+                "auth-session-secret=${AUTH_SESSION_SECRET}" \
                 "databricks-oauth-secret-1=${DATABRICKS_OAUTH_SECRET_1}" \
-                "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}"
+                "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}" \
+                "entra-client-secret=${ENTRA_CLIENT_SECRET}"
 
             az containerapp update \
               --name "${CONTAINER_APP}" \
@@ -257,6 +264,10 @@ jobs:
 
           echo "APP_URL=https://${FQDN}" >> "$GITHUB_ENV"
 
+      - name: Refresh Entra redirect URI
+        shell: bash
+        run: node scripts/provision-entra.mjs --github-env "$GITHUB_ENV"
+
       - name: Verify health endpoint
         shell: bash
         run: |
@@ -271,7 +282,8 @@ jobs:
             echo "Skipping /api/audit-test because Lakebase connection variables are not fully configured."
             exit 0
           fi
-          status_code="$(curl --show-error --silent --output audit-test-response.json --write-out "%{http_code}" "${APP_URL}/api/audit-test")"
+          verification_header="$(node -e 'const crypto = require("node:crypto"); const timestamp = Math.floor(Date.now() / 1000).toString(); const payload = ["GET", "/api/audit-test", timestamp].join("\n"); const signature = crypto.createHmac("sha256", process.env.AUTH_SESSION_SECRET).update(payload).digest("base64url"); process.stdout.write(`${timestamp}.${signature}`);')"
+          status_code="$(curl --show-error --silent --output audit-test-response.json --write-out "%{http_code}" --header "x-aoc-deployment-verification: ${verification_header}" "${APP_URL}/api/audit-test")"
           cat audit-test-response.json
           if [[ "${status_code}" -lt 200 || "${status_code}" -ge 300 ]]; then
             echo "Audit endpoint returned HTTP ${status_code}."

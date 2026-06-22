@@ -124,6 +124,7 @@ deployment:
     - prod
   platform_dispatch_repo: replace-with-platform-repo
   required_github_environment_secrets:
+    - AUTH_SESSION_SECRET
     - DATABRICKS_OAUTH_SECRET_1
     - DATABRICKS_OAUTH_SECRET_2
   optional_platform_dispatch_secrets:
@@ -139,6 +140,7 @@ deployment:
     - LAKEBASE_PGHOST
     - LAKEBASE_PGPORT
   current_phase_0_repo_secrets:
+    - AUTH_SESSION_SECRET
     - AZURE_CLIENT_ID
     - AZURE_LOCATION
     - AZURE_SUBSCRIPTION_ID

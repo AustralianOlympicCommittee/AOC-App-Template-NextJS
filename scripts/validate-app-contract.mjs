@@ -87,6 +87,7 @@ if (appName && environment) {
 validateBranchEnvironmentMap();
 validateAppRoles();
 validateMicrosoftGraphPermissions();
+validateRequiredSecrets();
 validateRequiredVariables();
 validateOAuthFallbackOrder();
 
@@ -158,6 +159,21 @@ function validateRequiredVariables() {
   for (const derived of ["LAKEBASE_DATABASE", "LAKEBASE_USER"]) {
     if (variables.includes(derived)) {
       fail(`${derived} must not be listed as required; the workflow derives it.`);
+    }
+  }
+}
+
+function validateRequiredSecrets() {
+  const secrets = contract.list("deployment", "required_github_environment_secrets");
+  const expected = [
+    "AUTH_SESSION_SECRET",
+    "DATABRICKS_OAUTH_SECRET_1",
+    "DATABRICKS_OAUTH_SECRET_2"
+  ];
+
+  for (const name of expected) {
+    if (!secrets.includes(name)) {
+      fail(`deployment.required_github_environment_secrets must include ${name}.`);
     }
   }
 }

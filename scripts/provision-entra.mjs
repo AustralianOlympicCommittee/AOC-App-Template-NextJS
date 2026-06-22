@@ -37,7 +37,7 @@ async function main() {
   }
 
   const result = await provisionIdentity(plan);
-  writeOutput(outputPath, result);
+  writeOutput(outputPath, persistedIdentityResult(result));
 
   if (args.githubEnv) {
     appendGithubEnvironment(args.githubEnv, githubEnvironmentFromIdentity(result));
@@ -99,6 +99,7 @@ function buildIdentityPlan(manifest) {
 
 async function provisionIdentity(plan) {
   const application = ensureApplication(plan);
+  const runtimeClientSecret = ensureRuntimeClientSecret(plan, application);
   const servicePrincipal = await ensureServicePrincipal(plan, application);
   const appRoles = appRolesForAssignment(plan.entra.app_roles, servicePrincipal);
   const groups = [];
@@ -132,6 +133,12 @@ async function provisionIdentity(plan) {
         app_id: application.appId,
         object_id: application.id
       },
+      runtime_client_secret: {
+        display_name: runtimeClientSecret.displayName,
+        end_date_time: runtimeClientSecret.endDateTime,
+        key_id: runtimeClientSecret.keyId,
+        source: runtimeClientSecret.source
+      },
       service_principal: {
         ...plan.entra.service_principal,
         app_id: servicePrincipal.appId,
@@ -140,6 +147,9 @@ async function provisionIdentity(plan) {
       },
       groups,
       app_role_assignments: assignments
+    },
+    private_values: {
+      entra_client_secret: runtimeClientSecret.secretText
     }
   };
 }
@@ -166,7 +176,7 @@ function ensureApplication(plan) {
   const existingApplications = graphCollection(
     graphUrl("/applications", {
       $filter: `displayName eq '${escapeODataString(plan.entra.application.display_name)}'`,
-      $select: "id,appId,displayName,appRoles,signInAudience,web"
+      $select: "id,appId,displayName,appRoles,passwordCredentials,signInAudience,web"
     })
   );
 
@@ -207,9 +217,46 @@ function ensureApplication(plan) {
   return graphRequest(
     "GET",
     graphUrl(`/applications/${existing.id}`, {
-      $select: "id,appId,displayName,appRoles,signInAudience,web"
+      $select: "id,appId,displayName,appRoles,passwordCredentials,signInAudience,web"
     })
   );
+}
+
+function ensureRuntimeClientSecret(plan, application) {
+  const configuredSecret = process.env.ENTRA_CLIENT_SECRET?.trim();
+  const displayName = `aoc-runtime-auth-${plan.environment}`;
+
+  if (configuredSecret) {
+    const existingCredential = (application.passwordCredentials ?? []).find(
+      (credential) => credential.displayName === displayName
+    );
+    return {
+      displayName,
+      endDateTime: existingCredential?.endDateTime ?? "",
+      keyId: existingCredential?.keyId ?? "",
+      secretText: configuredSecret,
+      source: "environment"
+    };
+  }
+
+  const endDateTime = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+  const credential = graphRequest("POST", graphUrl(`/applications/${application.id}/addPassword`), {
+    passwordCredential: {
+      displayName,
+      endDateTime
+    }
+  });
+  if (!credential.secretText) {
+    throw new Error(`Microsoft Graph did not return a runtime client secret for ${application.displayName}.`);
+  }
+  console.log(`Created runtime Entra client secret for ${application.displayName}; expires ${credential.endDateTime}.`);
+  return {
+    displayName,
+    endDateTime: credential.endDateTime,
+    keyId: credential.keyId,
+    secretText: credential.secretText,
+    source: "generated"
+  };
 }
 
 async function ensureServicePrincipal(plan, application) {
@@ -525,6 +572,7 @@ function githubEnvironmentFromIdentity(result) {
   const values = {
     ENTRA_APP_OBJECT_ID: result.entra.application.object_id,
     ENTRA_AUTHORITY: result.entra.authority,
+    ENTRA_CLIENT_SECRET: result.private_values.entra_client_secret,
     ENTRA_CLIENT_ID: result.entra.application.app_id,
     ENTRA_SERVICE_PRINCIPAL_OBJECT_ID: result.entra.service_principal.object_id,
     ENTRA_TENANT_ID: result.entra.tenant_id
@@ -551,9 +599,17 @@ function appendGithubEnvironment(path, values) {
     if (/[\r\n]/.test(stringValue)) {
       throw new Error(`GitHub environment value for ${key} must be single-line.`);
     }
+    if (process.env.GITHUB_ACTIONS === "true" && /SECRET|TOKEN|PASSWORD/i.test(key)) {
+      console.log(`::add-mask::${stringValue}`);
+    }
     return `${key}=${stringValue}`;
   });
   appendFileSync(path, `${lines.join("\n")}\n`);
+}
+
+function persistedIdentityResult(result) {
+  const { private_values: _privateValues, ...persisted } = result;
+  return persisted;
 }
 
 function writeOutput(path, value) {
