@@ -106,7 +106,7 @@ async function provisionIdentity(plan) {
 
   for (const role of appRoles) {
     const group = ensureGroup(plan, role);
-    const assignment = ensureGroupAppRoleAssignment(servicePrincipal, group, role);
+    const assignment = await ensureGroupAppRoleAssignment(servicePrincipal, group, role);
     groups.push({
       display_name: group.displayName,
       id: group.id,
@@ -232,20 +232,32 @@ async function ensureServicePrincipal(plan, application) {
     console.log(`Created Enterprise Application: ${servicePrincipal.displayName}`);
   }
 
-  graphRequest("PATCH", graphUrl(`/servicePrincipals/${servicePrincipal.id}`), {
-    appRoleAssignmentRequired: plan.entra.service_principal.app_role_assignment_required
-  });
+  await graphRequestWithRetry(
+    "PATCH",
+    graphUrl(`/servicePrincipals/${servicePrincipal.id}`),
+    {
+      appRoleAssignmentRequired: plan.entra.service_principal.app_role_assignment_required
+    },
+    {
+      description: `Enterprise Application ${servicePrincipal.displayName} settings to become writable`
+    }
+  );
 
   return waitForServicePrincipalRoles(servicePrincipal.id, plan.entra.app_roles);
 }
 
 async function waitForServicePrincipalRoles(servicePrincipalId, expectedRoles) {
   for (let attempt = 1; attempt <= 12; attempt += 1) {
-    const servicePrincipal = graphRequest(
+    const servicePrincipal = await graphRequestWithRetry(
       "GET",
       graphUrl(`/servicePrincipals/${servicePrincipalId}`, {
         $select: "id,appId,displayName,appRoles,appRoleAssignmentRequired"
-      })
+      }),
+      undefined,
+      {
+        attempts: 3,
+        description: `Enterprise Application ${servicePrincipalId} to become readable`
+      }
     );
 
     const values = new Set((servicePrincipal.appRoles ?? []).map((role) => role.value));
@@ -294,11 +306,14 @@ function ensureGroup(plan, role) {
   return group;
 }
 
-function ensureGroupAppRoleAssignment(servicePrincipal, group, role) {
-  const assignments = graphCollection(
+async function ensureGroupAppRoleAssignment(servicePrincipal, group, role) {
+  const assignments = await graphCollectionWithRetry(
     graphUrl(`/groups/${group.id}/appRoleAssignments`, {
       $select: "id,appRoleId,principalId,resourceId"
-    })
+    }),
+    {
+      description: `group ${group.displayName} app-role assignments to become readable`
+    }
   );
   const resourceAssignments = assignments.filter(
     (assignment) => sameGuid(assignment.resourceId, servicePrincipal.id)
@@ -315,11 +330,18 @@ function ensureGroupAppRoleAssignment(servicePrincipal, group, role) {
     );
   }
 
-  const created = graphRequest("POST", graphUrl(`/groups/${group.id}/appRoleAssignments`), {
-    appRoleId: role.id,
-    principalId: group.id,
-    resourceId: servicePrincipal.id
-  });
+  const created = await graphRequestWithRetry(
+    "POST",
+    graphUrl(`/groups/${group.id}/appRoleAssignments`),
+    {
+      appRoleId: role.id,
+      principalId: group.id,
+      resourceId: servicePrincipal.id
+    },
+    {
+      description: `group ${group.displayName} app-role assignment to become writable`
+    }
+  );
   console.log(`Assigned ${group.displayName} to app role ${role.value}.`);
   return created;
 }
@@ -333,6 +355,22 @@ function graphCollection(url) {
     nextUrl = body["@odata.nextLink"];
   }
   return items;
+}
+
+async function graphCollectionWithRetry(url, options = {}) {
+  for (let attempt = 1; attempt <= (options.attempts ?? 12); attempt += 1) {
+    try {
+      return graphCollection(url);
+    } catch (error) {
+      if (!isRetriableGraphError(error) || attempt === (options.attempts ?? 12)) {
+        throw error;
+      }
+      logGraphRetry(error, attempt, options.description);
+      await delay(options.delayMs ?? 5000);
+    }
+  }
+
+  return [];
 }
 
 function graphRequest(method, url, body) {
@@ -355,6 +393,39 @@ function graphRequest(method, url, body) {
       `Microsoft Graph ${method} ${redactUrl(url)} failed.${details ? `\n${details}` : ""}`
     );
   }
+}
+
+async function graphRequestWithRetry(method, url, body, options = {}) {
+  const attempts = options.attempts ?? 12;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return graphRequest(method, url, body);
+    } catch (error) {
+      if (!isRetriableGraphError(error) || attempt === attempts) {
+        throw error;
+      }
+      logGraphRetry(error, attempt, options.description);
+      await delay(options.delayMs ?? 5000);
+    }
+  }
+
+  return {};
+}
+
+function isRetriableGraphError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("Request_ResourceNotFound") ||
+    message.includes("TooManyRequests") ||
+    message.includes("temporarily unavailable") ||
+    /\\b(429|500|502|503|504)\\b/.test(message)
+  );
+}
+
+function logGraphRetry(error, attempt, description = "Microsoft Graph resource") {
+  const message = error instanceof Error ? error.message : String(error);
+  const firstLine = message.split("\\n").find(Boolean) ?? "Graph request failed.";
+  console.log(`${description} not ready on attempt ${attempt}; retrying. ${firstLine}`);
 }
 
 function graphUrl(path, params = {}) {
