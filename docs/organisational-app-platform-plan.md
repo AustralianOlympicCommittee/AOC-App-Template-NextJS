@@ -519,6 +519,8 @@ Production RBAC mitigation:
 - `rg-app-aoc-app-template-nextjs-prod` does not exist yet. Before the first `main` to `prod` deployment, create the prod app resource group and grant the deployment service principal `Contributor` on that resource group.
 - Treat this as a production readiness gate: the prod deployment workflow must prove the role assignment exists before attempting Container Apps, identity, or monitoring changes in prod.
 
+Proof cleanup is tracked in [decommission-register.md](decommission-register.md). Keep proof app resources, shared platform assets, Lakebase audit retention and Log Analytics evidence separated so cleanup does not remove reusable platform capability or required audit records.
+
 ### GitHub
 
 - Target GitHub org: `AustralianOlympicCommittee`

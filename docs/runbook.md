@@ -85,3 +85,5 @@ For audit-capable apps, confirm:
 ## Decommissioning
 
 Foundation apps should retain audit evidence before deletion. The default audit retention target is 1 year unless an app-specific oversight record requires a longer period.
+
+Use [decommission-register.md](decommission-register.md) as the cleanup inventory for proof-created resources and shared platform assets that must be retained.
