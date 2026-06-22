@@ -40,7 +40,7 @@ Expected sequence:
 9. Build the container image.
 10. Push the image to the approved registry.
 11. Deploy a new Container App revision with Entra, session and Lakebase secrets.
-12. Refresh the Entra redirect URI after the Container App FQDN is known.
+12. Refresh the Entra redirect URI after the Container App FQDN is known, then remove stale runtime Entra client credentials from the app registration.
 13. Run health and audit endpoint checks. The audit endpoint check uses a short-lived HMAC header signed with `AUTH_SESSION_SECRET`; normal users must authenticate through Entra and hold `App.Admin`.
 14. Record deployment evidence.
 

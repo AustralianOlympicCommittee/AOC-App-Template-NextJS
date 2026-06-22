@@ -224,16 +224,26 @@ function ensureApplication(plan) {
 
 function ensureRuntimeClientSecret(plan, application) {
   const configuredSecret = process.env.ENTRA_CLIENT_SECRET?.trim();
+  const configuredKeyId = process.env.ENTRA_CLIENT_SECRET_KEY_ID?.trim();
   const displayName = `aoc-runtime-auth-${plan.environment}`;
 
   if (configuredSecret) {
-    const existingCredential = (application.passwordCredentials ?? []).find(
-      (credential) => credential.displayName === displayName
-    );
+    const existingCredential =
+      (application.passwordCredentials ?? []).find(
+        (credential) => configuredKeyId && sameGuid(credential.keyId, configuredKeyId)
+      ) ??
+      (application.passwordCredentials ?? []).find(
+        (credential) => credential.displayName === displayName
+      );
+
+    if (configuredKeyId && process.env.ENTRA_CLEANUP_STALE_CLIENT_SECRETS === "true") {
+      cleanupRuntimeClientSecrets(application, displayName, configuredKeyId);
+    }
+
     return {
       displayName,
       endDateTime: existingCredential?.endDateTime ?? "",
-      keyId: existingCredential?.keyId ?? "",
+      keyId: configuredKeyId || existingCredential?.keyId || "",
       secretText: configuredSecret,
       source: "environment"
     };
@@ -257,6 +267,20 @@ function ensureRuntimeClientSecret(plan, application) {
     secretText: credential.secretText,
     source: "generated"
   };
+}
+
+function cleanupRuntimeClientSecrets(application, displayName, currentKeyId) {
+  const staleCredentials = (application.passwordCredentials ?? []).filter(
+    (credential) =>
+      credential.displayName === displayName && !sameGuid(credential.keyId, currentKeyId)
+  );
+
+  for (const credential of staleCredentials) {
+    graphRequest("POST", graphUrl(`/applications/${application.id}/removePassword`), {
+      keyId: credential.keyId
+    });
+    console.log(`Removed stale runtime Entra client secret ${credential.keyId} from ${application.displayName}.`);
+  }
 }
 
 async function ensureServicePrincipal(plan, application) {
@@ -573,6 +597,7 @@ function githubEnvironmentFromIdentity(result) {
     ENTRA_APP_OBJECT_ID: result.entra.application.object_id,
     ENTRA_AUTHORITY: result.entra.authority,
     ENTRA_CLIENT_SECRET: result.private_values.entra_client_secret,
+    ENTRA_CLIENT_SECRET_KEY_ID: result.entra.runtime_client_secret.key_id,
     ENTRA_CLIENT_ID: result.entra.application.app_id,
     ENTRA_SERVICE_PRINCIPAL_OBJECT_ID: result.entra.service_principal.object_id,
     ENTRA_TENANT_ID: result.entra.tenant_id

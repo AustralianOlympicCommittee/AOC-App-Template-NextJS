@@ -66,6 +66,7 @@ Runtime client credential:
 - The Phase 1D workflow creates an app registration password credential named `aoc-runtime-auth-<env>`.
 - The secret value is masked in GitHub Actions logs, exported only for the deployment job, and stored in the Container App as `entra-client-secret`.
 - The generated provisioning record stores only the credential display name, key ID, expiry and source, not the secret value.
+- After the new Container App revision is deployed, the workflow removes stale `aoc-runtime-auth-<env>` credentials from the app registration while retaining the credential used by the active revision.
 
 Known gap:
 

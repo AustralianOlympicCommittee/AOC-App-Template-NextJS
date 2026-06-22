@@ -266,6 +266,8 @@ jobs:
 
       - name: Refresh Entra redirect URI
         shell: bash
+        env:
+          ENTRA_CLEANUP_STALE_CLIENT_SECRETS: "true"
         run: node scripts/provision-entra.mjs --github-env "$GITHUB_ENV"
 
       - name: Verify health endpoint

@@ -208,6 +208,9 @@ Verification so far:
 - Direct unauthenticated `/api/audit-test` returned 401.
 - Direct `/api/auth/login` returned an Entra redirect, but the first implementation used the internal Container Apps origin `https://0.0.0.0:3000` for `redirect_uri`.
 - Updated runtime origin detection to prefer `x-forwarded-host` and `x-forwarded-proto` before falling back to the internal Next.js origin.
+- After the origin fix deployment, direct `/api/auth/login` used the public Container App FQDN in the Entra `redirect_uri`.
+- The app registration had two `aoc-runtime-auth-dev` password credentials after two Phase 1D deployments.
+- Added post-deployment stale runtime credential cleanup so the active revision's credential is retained and older generated credentials are removed.
 
 Remaining verification:
 
@@ -215,3 +218,4 @@ Remaining verification:
 - Confirm `/api/audit-test` succeeds only with deployment verification or an authenticated `App.Admin` session.
 - Confirm the Entra app registration contains the deployed callback URI.
 - Confirm `/api/auth/login` uses the public Container App FQDN as its Entra `redirect_uri`.
+- Confirm app registration runtime credential cleanup leaves only the active `aoc-runtime-auth-dev` credential.
