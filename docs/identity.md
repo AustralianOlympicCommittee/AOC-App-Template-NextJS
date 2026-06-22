@@ -37,17 +37,27 @@ The foundation template does not request Microsoft Graph permissions for the app
 
 The deployment identity needs Microsoft Graph rights to manage app registrations, service principals, groups and app-role assignments. If GitHub Actions fails at `Provision Entra app registration, Enterprise Application and app groups`, check whether the platform identity has the required Entra role and Graph application permissions.
 
-Observed Phase 1C blocker:
+Deployment identity configured for this template:
 
-- GitHub Actions Phase 0 Deploy run `27866287493` failed at `Provision Entra app registration, Enterprise Application and app groups`.
-- Microsoft Graph returned `Authorization_RequestDenied` and `Insufficient privileges to complete the operation` on `GET /applications`.
-- This indicates the Azure deployment identity can log in with OIDC but does not yet have enough Microsoft Graph or Entra directory permission to read and manage app registrations.
+- App registration: `sp-app-aoc-app-template-nextjs-github-deploy`.
+- Application client ID: `ce279577-4b81-4435-9d20-57fb320f54e4`.
+- Service principal object ID: `49361eda-48b8-414d-b9a7-e3719355b4f3`.
+- GitHub OIDC subjects:
+  - `repo:EvanExner/AOC-App-Template-NextJS:environment:dev`
+  - `repo:EvanExner/AOC-App-Template-NextJS:environment:prod`
+- Microsoft Graph application roles granted and verified:
+  - `Application.ReadWrite.All`
+  - `Group.ReadWrite.All`
+  - `AppRoleAssignment.ReadWrite.All`
+- Azure RBAC granted and verified:
+  - `Contributor` on `rg-app-aoc-app-template-nextjs-dev`
+  - `AcrPush` on `acraocappsprod`
+  - `Log Analytics Contributor` on `AOCLogAnalytics`
 
-Recommended IT handoff:
+Known gap:
 
-- Grant the deployment identity an approved Entra role or Graph application permissions that cover app registrations, service principals, groups and app-role assignments.
-- Re-run the Phase 0 Deploy workflow for the same commit after permissions are granted.
-- Do not work around this by manually creating different group or app registration names; the provisioning contract relies on deterministic names from `app.yml`.
+- `rg-app-aoc-app-template-nextjs-prod` does not exist yet. Add `Contributor` for this deployment service principal when the prod resource group is created.
+- Do not work around permission failures by manually creating different group or app registration names; the provisioning contract relies on deterministic names from `app.yml`.
 
 ## Local Checks
 

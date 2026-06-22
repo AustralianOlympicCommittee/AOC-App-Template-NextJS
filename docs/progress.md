@@ -99,7 +99,7 @@ Remaining follow-up:
 
 ## Phase 1C - Entra And Access Provisioning Contract
 
-Status: blocked on deployment identity Microsoft Graph permissions.
+Status: in progress; deployment identity configured and remote deployment verification pending.
 
 Scope:
 
@@ -135,12 +135,22 @@ Remote verification:
 - GitHub Actions Phase 0 Deploy run `27866287493` failed at `Provision Entra app registration, Enterprise Application and app groups`.
 - The failing Microsoft Graph request was `GET /applications` with `Authorization_RequestDenied` and `Insufficient privileges to complete the operation`.
 
-Current blocker:
+Deployment identity setup:
 
-- The GitHub deployment identity can authenticate to Azure with OIDC, but it does not yet have enough Microsoft Graph or Entra directory permission to read and manage app registrations.
+- Created deployment app registration `sp-app-aoc-app-template-nextjs-github-deploy`.
+- Application client ID: `ce279577-4b81-4435-9d20-57fb320f54e4`.
+- Service principal object ID: `49361eda-48b8-414d-b9a7-e3719355b4f3`.
+- Configured GitHub OIDC federated credentials for `repo:EvanExner/AOC-App-Template-NextJS:environment:dev` and `repo:EvanExner/AOC-App-Template-NextJS:environment:prod`.
+- Granted and verified Microsoft Graph application roles: `Application.ReadWrite.All`, `Group.ReadWrite.All` and `AppRoleAssignment.ReadWrite.All`.
+- Assigned Azure RBAC: `Contributor` on `rg-app-aoc-app-template-nextjs-dev`, `AcrPush` on `acraocappsprod` and `Log Analytics Contributor` on `AOCLogAnalytics`.
+- Ensured GitHub environments `dev` and `prod` exist.
+- Updated GitHub repo secret `AZURE_CLIENT_ID` to the deployment app registration client ID.
 
 Resume steps:
 
-- Grant the deployment identity approved Entra or Microsoft Graph permission for app registrations, service principals, groups and app-role assignments.
-- Re-run GitHub Actions Phase 0 Deploy for commit `ba9efcb80540082868aa235a1432a2e00df79f22`.
+- Re-run GitHub Actions Phase 0 Deploy for the current `dev` commit.
 - If the Entra step passes, continue watching Lakebase provisioning, audit migration, Container App deployment, health verification and audit endpoint verification.
+
+Known gap:
+
+- `rg-app-aoc-app-template-nextjs-prod` does not exist yet, so the deployment identity does not yet have `Contributor` on the future prod resource group.
