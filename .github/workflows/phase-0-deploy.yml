@@ -1,0 +1,293 @@
+name: Phase 0 Deploy
+
+concurrency:
+  group: phase-0-deploy-${{ github.ref_name }}-${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/phase-0-deploy.yml"
+      - "Dockerfile"
+      - "app.yml"
+      - "app/**"
+      - "lib/**"
+      - "next.config.ts"
+      - "package-lock.json"
+      - "package.json"
+      - "public/**"
+      - "scripts/app-contract.mjs"
+      - "scripts/generate-deployment-manifest.mjs"
+      - "scripts/migrate-lakebase-audit.mjs"
+      - "scripts/provision-entra.mjs"
+      - "scripts/provision-lakebase.mjs"
+      - "scripts/validate-app-contract.mjs"
+      - "tsconfig.json"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+    env:
+      AZURE_LOCATION: ${{ secrets.AZURE_LOCATION || vars.AZURE_LOCATION || 'australiaeast' }}
+      DEPLOY_ENV: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST || vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID || vars.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_OAUTH_SECRET_1: ${{ secrets.DATABRICKS_OAUTH_SECRET_1 }}
+      DATABRICKS_OAUTH_SECRET_2: ${{ secrets.DATABRICKS_OAUTH_SECRET_2 }}
+      AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
+      LAKEBASE_ENDPOINT_PATH: ${{ secrets.LAKEBASE_ENDPOINT_PATH || vars.LAKEBASE_ENDPOINT_PATH }}
+      LAKEBASE_PGHOST: ${{ secrets.LAKEBASE_PGHOST || vars.LAKEBASE_PGHOST }}
+      LAKEBASE_PGPORT: ${{ secrets.LAKEBASE_PGPORT || vars.LAKEBASE_PGPORT || '5432' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate app contract, typecheck and build
+        run: npm run check
+
+      - name: Generate deployment manifest
+        shell: bash
+        run: node scripts/generate-deployment-manifest.mjs --environment "${DEPLOY_ENV}" --github-env "$GITHUB_ENV"
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Provision Entra app registration, Enterprise Application and app groups
+        shell: bash
+        run: node scripts/provision-entra.mjs --github-env "$GITHUB_ENV"
+
+      - name: Provision Lakebase role and database
+        shell: bash
+        run: node scripts/provision-lakebase.mjs
+
+      - name: Run Lakebase audit migration
+        shell: bash
+        run: node scripts/migrate-lakebase-audit.mjs
+
+      - name: Build and push image
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${ACR_LOGIN_SERVER}/${APP_SLUG}:${GITHUB_SHA}"
+          az acr login --name "${ACR_NAME}" --subscription "${AZURE_SUBSCRIPTION_ID}"
+          docker build --tag "${IMAGE}" .
+          docker push "${IMAGE}"
+          echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
+
+      - name: Provision and deploy Container App
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          az group show --name "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null
+
+          if ! az containerapp env show --name "${CONTAINER_ENV}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
+            WORKSPACE_ID="$(az monitor log-analytics workspace show \
+              --resource-group "${LOG_ANALYTICS_RG}" \
+              --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --query customerId \
+              --output tsv)"
+
+            WORKSPACE_KEY="$(az monitor log-analytics workspace get-shared-keys \
+              --resource-group "${LOG_ANALYTICS_RG}" \
+              --workspace-name "${LOG_ANALYTICS_NAME}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --query primarySharedKey \
+              --output tsv)"
+
+            az containerapp env create \
+              --name "${CONTAINER_ENV}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --location "${AZURE_LOCATION}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --logs-workspace-id "${WORKSPACE_ID}" \
+              --logs-workspace-key "${WORKSPACE_KEY}"
+          fi
+
+          if ! az identity show --name "${IDENTITY_NAME}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
+            az identity create \
+              --name "${IDENTITY_NAME}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --location "${AZURE_LOCATION}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}"
+          fi
+
+          IDENTITY_ID="$(az identity show \
+            --name "${IDENTITY_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
+            --query id \
+            --output tsv)"
+
+          IDENTITY_PRINCIPAL_ID="$(az identity show \
+            --name "${IDENTITY_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
+            --query principalId \
+            --output tsv)"
+
+          COMMON_ENV_VARS=(
+            "APP_NAME=${APP_SLUG}"
+            "APP_ENVIRONMENT=${DEPLOY_ENV}"
+            "AUDIT_TABLE_NAME=${AUDIT_TABLE_NAME}"
+            "AUTH_SESSION_SECRET=secretref:auth-session-secret"
+            "DATABRICKS_HOST=${DATABRICKS_HOST}"
+            "DATABRICKS_CLIENT_ID=${DATABRICKS_CLIENT_ID}"
+            "DATABRICKS_OAUTH_SECRET_1=secretref:databricks-oauth-secret-1"
+            "DATABRICKS_OAUTH_SECRET_2=secretref:databricks-oauth-secret-2"
+            "LAKEBASE_ENDPOINT_PATH=${LAKEBASE_ENDPOINT_PATH}"
+            "LAKEBASE_PGHOST=${LAKEBASE_PGHOST}"
+            "LAKEBASE_PGPORT=${LAKEBASE_PGPORT}"
+            "LAKEBASE_DATABASE=${LAKEBASE_DATABASE}"
+            "LAKEBASE_USER=${LAKEBASE_USER}"
+            "ENTRA_APP_OBJECT_ID=${ENTRA_APP_OBJECT_ID}"
+            "ENTRA_AUTHORITY=${ENTRA_AUTHORITY}"
+            "ENTRA_CLIENT_ID=${ENTRA_CLIENT_ID}"
+            "ENTRA_CLIENT_SECRET=secretref:entra-client-secret"
+            "ENTRA_SERVICE_PRINCIPAL_OBJECT_ID=${ENTRA_SERVICE_PRINCIPAL_OBJECT_ID}"
+            "ENTRA_TENANT_ID=${ENTRA_TENANT_ID}"
+            "ENTRA_READ_GROUP_ID=${ENTRA_READ_GROUP_ID}"
+            "ENTRA_WRITE_GROUP_ID=${ENTRA_WRITE_GROUP_ID}"
+            "ENTRA_ADMIN_GROUP_ID=${ENTRA_ADMIN_GROUP_ID}"
+          )
+
+          if ! az containerapp show --name "${CONTAINER_APP}" --resource-group "${RESOURCE_GROUP}" --subscription "${AZURE_SUBSCRIPTION_ID}" >/dev/null 2>&1; then
+            az containerapp create \
+              --name "${CONTAINER_APP}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --environment "${CONTAINER_ENV}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --image "${IMAGE}" \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 0 \
+              --max-replicas 1 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --user-assigned "${IDENTITY_ID}" \
+              --registry-server "${ACR_LOGIN_SERVER}" \
+              --registry-identity "${IDENTITY_ID}" \
+              --secrets \
+                "auth-session-secret=${AUTH_SESSION_SECRET}" \
+                "databricks-oauth-secret-1=${DATABRICKS_OAUTH_SECRET_1}" \
+                "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}" \
+                "entra-client-secret=${ENTRA_CLIENT_SECRET}" \
+              --env-vars "${COMMON_ENV_VARS[@]}"
+          else
+            az containerapp secret set \
+              --name "${CONTAINER_APP}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --secrets \
+                "auth-session-secret=${AUTH_SESSION_SECRET}" \
+                "databricks-oauth-secret-1=${DATABRICKS_OAUTH_SECRET_1}" \
+                "databricks-oauth-secret-2=${DATABRICKS_OAUTH_SECRET_2}" \
+                "entra-client-secret=${ENTRA_CLIENT_SECRET}"
+
+            az containerapp update \
+              --name "${CONTAINER_APP}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --image "${IMAGE}" \
+              --set-env-vars "${COMMON_ENV_VARS[@]}"
+          fi
+
+          echo "Waiting for the latest Container App revision to become ready."
+          for attempt in {1..60}; do
+            mapfile -t revision_status < <(az containerapp show \
+              --name "${CONTAINER_APP}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --subscription "${AZURE_SUBSCRIPTION_ID}" \
+              --query "[properties.latestRevisionName, properties.latestReadyRevisionName, properties.provisioningState, properties.runningStatus]" \
+              --output tsv)
+
+            latest_revision="${revision_status[0]:-}"
+            ready_revision="${revision_status[1]:-}"
+            provisioning_state="${revision_status[2]:-}"
+            running_status="${revision_status[3]:-}"
+
+            if [[ -n "${latest_revision}" && "${latest_revision}" == "${ready_revision}" && "${provisioning_state}" == "Succeeded" && "${running_status}" == "Running" ]]; then
+              echo "Revision ${ready_revision} is ready."
+              break
+            fi
+
+            if [[ "${attempt}" -eq 60 ]]; then
+              echo "Timed out waiting for revision readiness."
+              echo "Latest revision: ${latest_revision:-unknown}"
+              echo "Latest ready revision: ${ready_revision:-unknown}"
+              echo "Provisioning state: ${provisioning_state:-unknown}"
+              echo "Running status: ${running_status:-unknown}"
+              exit 1
+            fi
+
+            sleep 5
+          done
+
+          FQDN="$(az containerapp show \
+            --name "${CONTAINER_APP}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --subscription "${AZURE_SUBSCRIPTION_ID}" \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)"
+
+          echo "APP_URL=https://${FQDN}" >> "$GITHUB_ENV"
+
+      - name: Refresh Entra redirect URI
+        shell: bash
+        env:
+          ENTRA_CLEANUP_STALE_CLIENT_SECRETS: "true"
+        run: node scripts/provision-entra.mjs --github-env "$GITHUB_ENV"
+
+      - name: Verify health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent "${APP_URL}${HEALTH_PATH}"
+
+      - name: Verify audit endpoint when Lakebase variables are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${LAKEBASE_ENDPOINT_PATH}" || -z "${LAKEBASE_PGHOST}" || -z "${LAKEBASE_DATABASE}" ]]; then
+            echo "Skipping /api/audit-test because Lakebase connection variables are not fully configured."
+            exit 0
+          fi
+          verification_header="$(node -e 'const crypto = require("node:crypto"); const timestamp = Math.floor(Date.now() / 1000).toString(); const payload = ["GET", "/api/audit-test", timestamp].join("\n"); const signature = crypto.createHmac("sha256", process.env.AUTH_SESSION_SECRET).update(payload).digest("base64url"); process.stdout.write(`${timestamp}.${signature}`);')"
+          status_code="$(curl --show-error --silent --output audit-test-response.json --write-out "%{http_code}" --header "x-aoc-deployment-verification: ${verification_header}" "${APP_URL}/api/audit-test")"
+          cat audit-test-response.json
+          if [[ "${status_code}" -lt 200 || "${status_code}" -ge 300 ]]; then
+            echo "Audit endpoint returned HTTP ${status_code}."
+            exit 1
+          fi
