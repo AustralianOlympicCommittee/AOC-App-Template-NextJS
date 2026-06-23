@@ -255,6 +255,8 @@ Verification so far:
 - `npm run validate:docs` passed.
 - `npm run check:scripts` passed.
 - `npm run check` passed, including contract validation, adoption documentation validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
+- GitHub Actions Validate run `28002591206` passed on commit `911adcd6b572157b9b52ba589acff5eb44c9d065`.
+- GitHub Actions Phase 0 Deploy run `28002591239` passed on commit `911adcd6b572157b9b52ba589acff5eb44c9d065`.
 
 Remaining follow-up:
 
