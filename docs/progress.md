@@ -226,3 +226,37 @@ Verification so far:
 Remaining verification:
 
 - Complete an interactive browser sign-in using a real user assigned to one of the app Entra groups, then confirm the session roles and `App.Admin` access path.
+
+## Phase 1E - Adoption Intake And Project Transformation Workflow
+
+Status: complete for the initial adoption intake scaffolding.
+
+Scope:
+
+- Give future agents a concrete adoption process for bringing an existing local app into the template.
+- Add root-level adoption artefacts that capture readiness, adoption work and known gaps.
+- Validate adoption and required documentation through the standard local and CI check path.
+- Refresh agent-facing guidance so adoption work is consistent across Codex and Claude.
+
+Implementation record:
+
+- Added `AOC_READINESS_REPORT.md` for source app assessment, classification, data review, deployment readiness and oversight signals.
+- Added `AOC_ADOPTION_PLAN.md` for workstreams, transformation steps, validation plan, deployment plan and handover.
+- Added `AOC_GAP_REGISTER.md` for open gaps, deferred decisions and risk treatment.
+- Added `docs/adoption-workflow.md` with required inputs, outputs, agent process, static app conversion guidance, validation gates and oversight triggers.
+- Added `scripts/validate-adoption-docs.mjs`.
+- Added `npm run validate:docs` and included adoption documentation validation in `npm run check`.
+- Replaced the shell-only required docs check in `.github/workflows/validate.yml` with the central `npm run check` path.
+- Updated `AGENTS.md`, `CLAUDE.md` and `INSTRUCTIONS.md` so future agents know the adoption artefacts are required.
+- Updated `docs/architecture.md` to reflect that runtime Entra enforcement has been implemented.
+
+Verification so far:
+
+- `npm run validate:docs` passed.
+- `npm run check:scripts` passed.
+- `npm run check` passed, including contract validation, adoption documentation validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
+
+Remaining follow-up:
+
+- Use these artefacts against the first real source application and tighten the workflow based on observed gaps.
+- Consider adding a source-project inventory script once the first adoption reveals which signals are worth automating.

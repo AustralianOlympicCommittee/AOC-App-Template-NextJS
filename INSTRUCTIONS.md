@@ -86,6 +86,7 @@ Agents must create documentation where it does not exist and update it when beha
 Required documentation:
 
 - `docs/architecture.md`
+- `docs/adoption-workflow.md`
 - `docs/data-model.md`
 - `docs/security.md`
 - `docs/audit.md`
@@ -94,6 +95,12 @@ Required documentation:
 - `docs/support.md`
 - `docs/user-guide.md`
 - `docs/oversight.md`
+
+Required adoption artefacts when adopting an existing app:
+
+- `AOC_READINESS_REPORT.md`
+- `AOC_ADOPTION_PLAN.md`
+- `AOC_GAP_REGISTER.md`
 
 Foundation apps may start with concise documents, but internal, operational, mature, sensitive or external apps require stronger evidence.
 

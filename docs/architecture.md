@@ -45,7 +45,7 @@ Default app groups:
 
 These groups control application access. They do not grant Azure administration.
 
-Phase 1C provisions these identity objects and exports Entra IDs to the Container App. Runtime token and role-claim enforcement is the next implementation phase.
+The deployment workflow provisions these identity objects and exports Entra IDs to the Container App. Runtime Entra sign-in validates ID tokens, stores encrypted sessions and enforces app-role claims for protected routes.
 
 ## Database
 
@@ -61,4 +61,4 @@ Application audit events are written to Lakebase and emitted as structured logs 
 
 ## Deployment
 
-`main` is the default branch and deploys to `prod`. The `dev` branch deploys to the `dev` environment. GitHub Actions will validate, provision and deploy through platform-owned workflows once the build-out is implemented.
+`main` is the default branch and deploys to `prod`. The `dev` branch deploys to the `dev` environment. GitHub Actions validate, provision and deploy the app environment from `app.yml` and the generated deployment manifest.

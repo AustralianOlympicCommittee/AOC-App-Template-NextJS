@@ -25,3 +25,13 @@ This repository is the AOC organisational application template. It adopts local 
 3. If the request changes risk level, use the warning text in `INSTRUCTIONS.md`.
 4. For build-out work, prioritise the Phase 0 proof in [docs/phase-0-proof-runbook.md](docs/phase-0-proof-runbook.md).
 5. Use `npm run validate:identity` before changing Entra provisioning behaviour.
+
+## Adoption Workflow
+
+When adopting an existing app, read [docs/adoption-workflow.md](docs/adoption-workflow.md), then produce or update:
+
+- `AOC_READINESS_REPORT.md`
+- `AOC_ADOPTION_PLAN.md`
+- `AOC_GAP_REGISTER.md`
+
+Run `npm run validate:docs` and `npm run check` before claiming the adoption artefacts are complete.

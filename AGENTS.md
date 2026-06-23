@@ -31,13 +31,15 @@ Help the user adopt, document, validate and prepare applications for governed de
 
 When asked to adopt an existing app:
 
-1. Inspect the original project.
-2. Produce or update `AOC_READINESS_REPORT.md`.
-3. Produce or update `AOC_ADOPTION_PLAN.md`.
-4. Produce or update `AOC_GAP_REGISTER.md`.
-5. Convert simple static pages into Next.js routes.
-6. Add or update required docs.
-7. Keep deployment secrets as GitHub Environment requirements, not source files.
+1. Read `docs/adoption-workflow.md`.
+2. Inspect the original project.
+3. Produce or update `AOC_READINESS_REPORT.md`.
+4. Produce or update `AOC_ADOPTION_PLAN.md`.
+5. Produce or update `AOC_GAP_REGISTER.md`.
+6. Convert simple static pages into Next.js routes.
+7. Add or update required docs.
+8. Keep deployment secrets as GitHub Environment requirements, not source files.
+9. Run `npm run validate:docs` and `npm run check` before claiming adoption readiness.
 
 ## Identity Provisioning
 
