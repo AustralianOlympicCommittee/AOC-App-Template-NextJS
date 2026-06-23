@@ -262,3 +262,33 @@ Remaining follow-up:
 
 - Use these artefacts against the first real source application and tighten the workflow based on observed gaps.
 - Consider adding a source-project inventory script once the first adoption reveals which signals are worth automating.
+
+## Phase 1F - Adoption Issue Capture
+
+Status: complete for the initial issue capture mechanism.
+
+Scope:
+
+- Give client repositories a durable way to record adoption issues encountered while following this template.
+- Keep issue capture local to the client repo by default, avoiding automatic cross-repo log disclosure.
+- Add a structured GitHub issue form for issues needing discussion, assignment, triage or escalation.
+- Validate the issue register and issue form as required adoption artefacts.
+
+Implementation record:
+
+- Added `AOC_ADOPTION_ISSUES.md` with issue capture rules, standard categories, open issue tracking, issue details and closed issue tracking.
+- Added `.github/ISSUE_TEMPLATE/aoc-adoption-issue.yml` for structured adoption issue reports.
+- Updated `docs/adoption-workflow.md` with issue capture guidance, required fields, escalation rules and sanitisation warnings.
+- Updated `AGENTS.md`, `CLAUDE.md` and `INSTRUCTIONS.md` so future agents record blockers in the issue register.
+- Updated `AOC_GAP_REGISTER.md` to link related adoption issues.
+- Extended `scripts/validate-adoption-docs.mjs` so the issue register and GitHub issue form are required.
+
+Verification so far:
+
+- `npm run validate:docs` passed.
+- `npm run check:scripts` passed.
+- `npm run check` passed, including contract validation, adoption documentation validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
+
+Remaining follow-up:
+
+- During the first real app trial, use this register for every adoption blocker and decide whether any client-repo issue should be promoted to a central template/platform issue.

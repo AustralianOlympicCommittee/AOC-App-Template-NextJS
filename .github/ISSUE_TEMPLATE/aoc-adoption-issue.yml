@@ -1,0 +1,109 @@
+name: AOC adoption issue
+description: Capture an issue encountered while adopting an app with the AOC organisational application template.
+title: "[AOC adoption]: "
+labels:
+  - aoc-adoption
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for adoption issues that need discussion, assignment or escalation.
+
+        Do not include secrets, tokens, cookies, full environment dumps, raw credentials or sensitive payloads. Use short sanitised excerpts and link to GitHub Actions runs where possible.
+  - type: input
+    id: client-repo
+    attributes:
+      label: Client repository
+      description: Repository where the adoption issue occurred.
+      placeholder: AustralianOlympicCommittee/example-app
+    validations:
+      required: true
+  - type: input
+    id: template-version
+    attributes:
+      label: Template version or commit SHA
+      description: Commit SHA or tag of the AOC template directions being followed.
+      placeholder: 911adcd6b572157b9b52ba589acff5eb44c9d065
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - adoption-intake
+        - nextjs-conversion
+        - app-contract
+        - github-actions
+        - azure-provisioning
+        - entra-identity
+        - lakebase-database
+        - audit-logging
+        - documentation
+        - platform-defect
+        - user-decision-required
+    validations:
+      required: true
+  - type: input
+    id: phase
+    attributes:
+      label: Adoption phase
+      placeholder: Phase 1F, first app trial, dev deployment, prod promotion
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitised evidence
+      description: Include short error excerpts, command names, workflow step names or links. Do not paste secrets or sensitive payloads.
+      placeholder: |
+        Command/workflow:
+        Error excerpt:
+        GitHub Actions run URL:
+    validations:
+      required: true
+  - type: input
+    id: related-gap
+    attributes:
+      label: Related gap register item
+      description: Link or ID from AOC_GAP_REGISTER.md, if applicable.
+      placeholder: GAP-001
+    validations:
+      required: false
+  - type: dropdown
+    id: blocks
+    attributes:
+      label: What does this block?
+      options:
+        - local work
+        - dev deployment
+        - prod promotion
+        - documentation only
+        - not blocking
+    validations:
+      required: true
+  - type: dropdown
+    id: escalation
+    attributes:
+      label: Does this look like a template or platform defect?
+      options:
+        - "No"
+        - "Possibly"
+        - "Yes"
+    validations:
+      required: true

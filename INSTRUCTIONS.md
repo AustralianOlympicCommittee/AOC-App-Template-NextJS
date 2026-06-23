@@ -101,8 +101,11 @@ Required adoption artefacts when adopting an existing app:
 - `AOC_READINESS_REPORT.md`
 - `AOC_ADOPTION_PLAN.md`
 - `AOC_GAP_REGISTER.md`
+- `AOC_ADOPTION_ISSUES.md`
 
 Foundation apps may start with concise documents, but internal, operational, mature, sensitive or external apps require stronger evidence.
+
+Record adoption blockers, failed workflow directions and unresolved platform/template issues in `AOC_ADOPTION_ISSUES.md`. Use the GitHub `AOC adoption issue` form when an issue needs assignment, discussion or escalation. Do not paste secrets, raw credentials, full environment dumps or sensitive payloads into issue records.
 
 ## Source Management Rules
 

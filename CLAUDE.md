@@ -33,5 +33,6 @@ When adopting an existing app, read [docs/adoption-workflow.md](docs/adoption-wo
 - `AOC_READINESS_REPORT.md`
 - `AOC_ADOPTION_PLAN.md`
 - `AOC_GAP_REGISTER.md`
+- `AOC_ADOPTION_ISSUES.md`
 
 Run `npm run validate:docs` and `npm run check` before claiming the adoption artefacts are complete.

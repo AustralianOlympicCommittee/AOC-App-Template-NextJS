@@ -27,6 +27,7 @@ Every adoption should produce or update:
 - `AOC_READINESS_REPORT.md`
 - `AOC_ADOPTION_PLAN.md`
 - `AOC_GAP_REGISTER.md`
+- `AOC_ADOPTION_ISSUES.md`
 - `app.yml`
 - `docs/architecture.md`
 - `docs/data-model.md`
@@ -45,12 +46,13 @@ Every adoption should produce or update:
 3. Create or update `AOC_READINESS_REPORT.md` with source structure, users, data, integrations and risk signals.
 4. Update `AOC_GAP_REGISTER.md` for missing owners, unknown data flows, unsupported dependencies, secrets in source or deployment blockers.
 5. Draft `AOC_ADOPTION_PLAN.md` with workstreams, validation steps and deployment path.
-6. Update `app.yml` only after the app name, owner, environment, classification, identity roles and database model are understood.
-7. Convert the app to the standard Next.js structure.
-8. Add or update Lakebase migrations and audit events.
-9. Update required documentation.
-10. Run local validation before pushing.
-11. Record GitHub Actions and deployment evidence in `docs/progress.md`.
+6. Record adoption issues in `AOC_ADOPTION_ISSUES.md` when commands, workflows, deployment steps or instructions fail.
+7. Update `app.yml` only after the app name, owner, environment, classification, identity roles and database model are understood.
+8. Convert the app to the standard Next.js structure.
+9. Add or update Lakebase migrations and audit events.
+10. Update required documentation.
+11. Run local validation before pushing.
+12. Record GitHub Actions and deployment evidence in `docs/progress.md`.
 
 ## Static App Conversion
 
@@ -89,6 +91,36 @@ Run these checks before claiming adoption progress is complete:
 - GitHub Actions Validate
 - Deployment workflow for the target environment when deployment settings or runtime code changed
 
+## Adoption Issue Capture
+
+Use `AOC_ADOPTION_ISSUES.md` for durable local issue tracking in the client repo. Use the GitHub issue form when an issue needs discussion, assignment, triage, or escalation to the template/platform maintainers.
+
+Record an issue when:
+
+- a template direction is unclear or cannot be followed;
+- a local validation command fails;
+- a GitHub Actions workflow fails;
+- Azure, Entra, Lakebase or Log Analytics provisioning behaves unexpectedly;
+- an adoption decision is blocked on a user, owner, IT, security or privacy answer;
+- a gap in this reference template is discovered.
+
+Each issue should include:
+
+- client repository;
+- template version or commit SHA;
+- adoption phase;
+- category;
+- command or workflow step;
+- expected result;
+- actual result;
+- short sanitised error excerpt or GitHub Actions run URL;
+- related `AOC_GAP_REGISTER.md` item, if any;
+- whether it blocks local work, dev deployment, prod promotion or documentation only.
+
+Do not paste secrets, tokens, raw cookies, full environment dumps, database credentials, full workflow logs or sensitive payloads. Link to logs and include only the smallest useful sanitised excerpt.
+
+If the issue appears to be a template or platform defect, create a structured GitHub issue in the client repo using the `AOC adoption issue` form, then link it from `AOC_ADOPTION_ISSUES.md`. A central reference-repo issue can be created later when the maintainers agree it belongs upstream.
+
 ## Oversight Triggers
 
 Pause the risky part of the work and record oversight evidence when adoption introduces:
@@ -120,6 +152,7 @@ An adoption phase is complete when:
 1. The app runs locally as a Next.js project.
 2. `app.yml` matches the intended classification and environment.
 3. Required docs and adoption artefacts are current.
-4. Local validation passes.
-5. CI validation passes.
-6. Deployment evidence is recorded when deployment is in scope.
+4. Adoption issues are closed, deferred with an owner, or linked to a gap.
+5. Local validation passes.
+6. CI validation passes.
+7. Deployment evidence is recorded when deployment is in scope.

@@ -29,3 +29,5 @@ A gap is closed when:
 1. The underlying issue has been fixed or the decision has been made.
 2. Validation or manual evidence has been recorded.
 3. Related documentation has been updated.
+
+Related adoption issues should be tracked in `AOC_ADOPTION_ISSUES.md` and linked from this register where useful.

@@ -4,6 +4,8 @@ const requiredFiles = [
   "AOC_READINESS_REPORT.md",
   "AOC_ADOPTION_PLAN.md",
   "AOC_GAP_REGISTER.md",
+  "AOC_ADOPTION_ISSUES.md",
+  ".github/ISSUE_TEMPLATE/aoc-adoption-issue.yml",
   "docs/adoption-workflow.md",
   "docs/architecture.md",
   "docs/data-model.md",
@@ -54,6 +56,17 @@ const requiredHeadings = new Map([
     ]
   ],
   [
+    "AOC_ADOPTION_ISSUES.md",
+    [
+      "# AOC Adoption Issues",
+      "## Issue Capture Rules",
+      "## Categories",
+      "## Open Issues",
+      "## Issue Details",
+      "## Closed Issues"
+    ]
+  ],
+  [
     "docs/adoption-workflow.md",
     [
       "# Adoption Workflow",
@@ -62,7 +75,26 @@ const requiredHeadings = new Map([
       "## Adoption Outputs",
       "## Agent Process",
       "## Validation Gates",
+      "## Adoption Issue Capture",
       "## Completion Criteria"
+    ]
+  ]
+]);
+
+const requiredSnippets = new Map([
+  [
+    ".github/ISSUE_TEMPLATE/aoc-adoption-issue.yml",
+    [
+      "name: AOC adoption issue",
+      "labels:",
+      "aoc-adoption",
+      "needs-triage",
+      "id: client-repo",
+      "id: template-version",
+      "id: category",
+      "id: evidence",
+      "id: blocks",
+      "id: escalation"
     ]
   ]
 ]);
@@ -84,6 +116,12 @@ for (const file of requiredFiles) {
   for (const heading of requiredHeadings.get(file) ?? []) {
     if (!text.includes(heading)) {
       failures.push(`${file} must include heading: ${heading}`);
+    }
+  }
+
+  for (const snippet of requiredSnippets.get(file) ?? []) {
+    if (!text.includes(snippet)) {
+      failures.push(`${file} must include: ${snippet}`);
     }
   }
 }
