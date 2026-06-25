@@ -36,7 +36,7 @@ When asked to adopt an existing app:
 3. Produce or update `AOC_READINESS_REPORT.md`.
 4. Produce or update `AOC_ADOPTION_PLAN.md`.
 5. Produce or update `AOC_GAP_REGISTER.md`.
-6. Produce or update `AOC_ADOPTION_ISSUES.md` when blockers, unclear instructions or workflow failures appear.
+6. Complete the `AOC_ADOPTION_ISSUES.md` adoption context and update the register when blockers, unclear instructions or workflow failures appear.
 7. Convert simple static pages into Next.js routes.
 8. Add or update required docs.
 9. Keep deployment secrets as GitHub Environment requirements, not source files.
