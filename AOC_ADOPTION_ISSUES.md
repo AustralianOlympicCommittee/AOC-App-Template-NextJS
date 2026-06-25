@@ -27,24 +27,25 @@ Use this file for durable local tracking. Use the GitHub issue form when an issu
 - `platform-defect`
 - `user-decision-required`
 
+## Adoption Context
+
+| Field | Value |
+| --- | --- |
+| Client repo | To be completed |
+| Source app | To be completed |
+| Template baseline | `adoption-trial-0.1.0` |
+| Current phase | To be completed |
+| Latest workflow run | To be completed |
+
 ## Open Issues
 
 | ID | Category | Phase | Summary | Blocks | Related gap | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| ISSUE-001 | `user-decision-required` | Phase 1D | Manual browser sign-in proof is deferred until a real adopted app and user group exist. | Full end-user access proof | `GAP-001` | Deferred |
+| _None recorded yet_ |  |  |  |  |  |  |
 
 ## Issue Details
 
-### ISSUE-001 - Manual Browser Sign-In Proof Deferred
-
-- Category: `user-decision-required`
-- Phase: Phase 1D
-- Source: template build-out
-- Command or workflow: not applicable
-- Expected result: a real user assigned to an app Entra group signs in and confirms role-based access.
-- Actual result: deferred until there is a real application and intended user group.
-- Sanitised evidence: automated checks confirm public health, protected unauthenticated routes and Entra redirect URI; manual user session remains intentionally untested.
-- Next action: complete during the first real app adoption.
+No issue details recorded yet. Replace this sentence when the first issue is opened.
 
 ## Closed Issues
 

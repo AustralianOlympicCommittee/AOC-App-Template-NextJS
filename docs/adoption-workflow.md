@@ -46,7 +46,7 @@ Every adoption should produce or update:
 3. Create or update `AOC_READINESS_REPORT.md` with source structure, users, data, integrations and risk signals.
 4. Update `AOC_GAP_REGISTER.md` for missing owners, unknown data flows, unsupported dependencies, secrets in source or deployment blockers.
 5. Draft `AOC_ADOPTION_PLAN.md` with workstreams, validation steps and deployment path.
-6. Record adoption issues in `AOC_ADOPTION_ISSUES.md` when commands, workflows, deployment steps or instructions fail.
+6. Complete the `AOC_ADOPTION_ISSUES.md` adoption context section, then record issues there when commands, workflows, deployment steps or instructions fail.
 7. Update `app.yml` only after the app name, owner, environment, classification, identity roles and database model are understood.
 8. Convert the app to the standard Next.js structure.
 9. Add or update Lakebase migrations and audit events.
@@ -94,6 +94,8 @@ Run these checks before claiming adoption progress is complete:
 ## Adoption Issue Capture
 
 Use `AOC_ADOPTION_ISSUES.md` for durable local issue tracking in the client repo. Use the GitHub issue form when an issue needs discussion, assignment, triage, or escalation to the template/platform maintainers.
+
+Complete the adoption context table before the first deployment attempt. If the register still says `To be completed`, it is not ready to be used as deployment evidence.
 
 Record an issue when:
 

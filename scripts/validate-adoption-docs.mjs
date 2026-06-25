@@ -61,6 +61,7 @@ const requiredHeadings = new Map([
       "# AOC Adoption Issues",
       "## Issue Capture Rules",
       "## Categories",
+      "## Adoption Context",
       "## Open Issues",
       "## Issue Details",
       "## Closed Issues"
