@@ -153,6 +153,7 @@ Deployment identity setup:
 - Application client ID: `ce279577-4b81-4435-9d20-57fb320f54e4`.
 - Service principal object ID: `49361eda-48b8-414d-b9a7-e3719355b4f3`.
 - Configured GitHub OIDC federated credentials for `repo:EvanExner/AOC-App-Template-NextJS:environment:dev` and `repo:EvanExner/AOC-App-Template-NextJS:environment:prod`.
+- After the repository moved to `AustralianOlympicCommittee/AOC-App-Template-NextJS`, added GitHub OIDC federated credentials for `repo:AustralianOlympicCommittee/AOC-App-Template-NextJS:environment:dev` and `repo:AustralianOlympicCommittee/AOC-App-Template-NextJS:environment:prod`.
 - Granted and verified Microsoft Graph application roles: `Application.ReadWrite.All`, `Group.ReadWrite.All` and `AppRoleAssignment.ReadWrite.All`.
 - Assigned Azure RBAC: `Contributor` on `rg-app-aoc-app-template-nextjs-dev`, `AcrPush` on `acraocappsprod` and `Log Analytics Contributor` on `AOCLogAnalytics`.
 - Ensured GitHub environments `dev` and `prod` exist.

@@ -50,6 +50,8 @@ Deployment identity configured for this template:
 - Application client ID: `ce279577-4b81-4435-9d20-57fb320f54e4`.
 - Service principal object ID: `49361eda-48b8-414d-b9a7-e3719355b4f3`.
 - GitHub OIDC subjects:
+  - `repo:AustralianOlympicCommittee/AOC-App-Template-NextJS:environment:dev`
+  - `repo:AustralianOlympicCommittee/AOC-App-Template-NextJS:environment:prod`
   - `repo:EvanExner/AOC-App-Template-NextJS:environment:dev`
   - `repo:EvanExner/AOC-App-Template-NextJS:environment:prod`
 - Microsoft Graph application roles granted and verified:
