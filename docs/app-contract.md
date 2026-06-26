@@ -13,7 +13,7 @@
   - `rg-app-<app>-<env>`
   - `ca-<app>-<env>`
   - `cae-<app>-<env>`
-- Lakebase database names must follow `db-app-<app>-<env>`.
+- Lakebase database names must follow `db_app_<app_with_underscores>_<env>`.
 - `deployment.default_branch` must be `main`.
 - `deployment.branch_environment_map` must map `dev` to `dev` and `main` to `prod`.
 - App permission groups must follow:

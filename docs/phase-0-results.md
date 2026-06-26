@@ -10,7 +10,7 @@ Final successful run:
 - GitHub Actions validation run: `27855715140`
 - Container App: `ca-aoc-app-template-nextjs-dev`
 - Resource group: `rg-app-aoc-app-template-nextjs-dev`
-- Lakebase database: `db-app-aoc-app-template-nextjs-dev`
+- Lakebase database: `db-app-aoc-app-template-nextjs-dev` (legacy Phase 0 proof database; the current standard is `db_app_<app_with_underscores>_<env>`)
 
 ## Implemented
 
@@ -30,14 +30,14 @@ Final successful run:
 - Azure Container Registry: `acraocappsprod.azurecr.io`.
 - Azure Container Apps deployment with revision readiness wait.
 - Lakebase service-principal role provisioning.
-- Lakebase per-app database provisioning using `db-app-<app>-<env>`.
+- Lakebase per-app database provisioning using the original `db-app-<app>-<env>` proof convention. The current contract now uses `db_app_<app_with_underscores>_<env>` to avoid awkward PostgreSQL quoted identifiers.
 
 ## Deployment Evidence
 
 The final deploy run completed successfully end to end:
 
 - Lakebase service-principal role existed on `projects/aoc-apps-prod/branches/production`.
-- Lakebase app database was created: `projects/aoc-apps-prod/branches/production/databases/db-app-aoc-app-template-nextjs-dev`.
+- Lakebase app database was created: `projects/aoc-apps-prod/branches/production/databases/db-app-aoc-app-template-nextjs-dev` (legacy proof database).
 - Container App revision became ready: `ca-aoc-app-template-nextjs-dev--0000006`.
 - `/api/health` returned `status: ok`.
 - `/api/audit-test` returned `status: ok`.
@@ -69,7 +69,7 @@ Required repository or environment secrets/variables for Phase 0:
 
 No `LAKEBASE_DATABASE` or `LAKEBASE_USER` secret is required for this workflow. The workflow derives:
 
-- `LAKEBASE_DATABASE=db-app-${APP_SLUG}-${DEPLOY_ENV}`
+- `LAKEBASE_DATABASE=db_app_${APP_SLUG_WITH_UNDERSCORES}_${DEPLOY_ENV}`
 - `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 ## Local Verification

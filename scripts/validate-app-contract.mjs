@@ -1,4 +1,4 @@
-import { loadAppContract } from "./app-contract.mjs";
+import { lakebaseDatabaseName, loadAppContract } from "./app-contract.mjs";
 
 const contract = loadAppContract("app.yml");
 const failures = [];
@@ -72,6 +72,10 @@ if (auditTableName && !/^[a-z][a-z0-9_]*$/.test(auditTableName)) {
   fail("audit.audit_table_name must use lowercase letters, numbers and underscores.");
 }
 
+if (databaseName && !/^[a-z][a-z0-9_]*$/.test(databaseName)) {
+  fail("database.database_name must use lowercase letters, numbers and underscores.");
+}
+
 if (appName && environment) {
   expect("hosting.resource_group_name", resourceGroup, `rg-app-${appName}-${environment}`);
   expect("hosting.container_app_name", containerApp, `ca-${appName}-${environment}`);
@@ -80,7 +84,7 @@ if (appName && environment) {
     managedEnvironment,
     `cae-${appName}-${environment}`
   );
-  expect("database.database_name", databaseName, `db-app-${appName}-${environment}`);
+  expect("database.database_name", databaseName, lakebaseDatabaseName(appName, environment));
   expect("identity.app_registration_display_name", appRegistrationDisplayName, `app-${appName}-${environment}`);
 }
 

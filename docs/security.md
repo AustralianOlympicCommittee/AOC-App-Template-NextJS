@@ -73,7 +73,7 @@ The deployment workflow derives and exports these Entra values after provisionin
 
 `LAKEBASE_DATABASE` and `LAKEBASE_USER` are derived by the generated deployment manifest and exported by the deployment workflow:
 
-- `LAKEBASE_DATABASE=db-app-<app>-<env>`
+- `LAKEBASE_DATABASE=db_app_<app_with_underscores>_<env>`
 - `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 For Phase 0, the current repository-level Databricks secrets are:

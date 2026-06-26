@@ -79,7 +79,7 @@ database:
   shared_lakebase_project_uid: b27afc57-8f3f-400a-96bf-86e92e82938e
   dedicated_lakebase_project_required: false
   dedicated_lakebase_project_approval_required: true
-  database_name: db-app-aoc-app-template-nextjs-dev
+  database_name: db_app_aoc_app_template_nextjs_dev
   environment_database_model: database_per_app_environment
   endpoint_path_variable: LAKEBASE_ENDPOINT_PATH
   pg_host_variable: LAKEBASE_PGHOST

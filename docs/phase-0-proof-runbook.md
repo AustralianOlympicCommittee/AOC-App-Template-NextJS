@@ -111,7 +111,7 @@ Lakebase connection values used from the Lakebase Connect dialog:
 
 The workflow derives:
 
-- `LAKEBASE_DATABASE=db-app-<app>-<env>`
+- `LAKEBASE_DATABASE=db_app_<app_with_underscores>_<env>`
 - `LAKEBASE_USER=${DATABRICKS_CLIENT_ID}`
 
 The PostgreSQL connection string from the Lakebase Connect dialog looks like:
@@ -140,7 +140,7 @@ Use a two-level fallback when connecting to Lakebase:
 4. Configure GitHub Environment secrets.
 5. Configure Databricks service principal or federated auth for the proof.
 6. Generate the deployment manifest from `app.yml`.
-7. Create or reference a Lakebase database named with the `db-app-<app>-<env>` convention.
+7. Create or reference a Lakebase database named with the `db_app_<app_with_underscores>_<env>` convention.
 8. Run the Lakebase audit migration to create the `app_audit_events` table.
 9. Implement a Lakebase connection using SSL and short-lived credentials.
 10. Implement the Databricks OAuth two-secret fallback.

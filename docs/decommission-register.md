@@ -25,8 +25,9 @@ App environment: `aoc-app-template-nextjs-dev`
 | Entra | Read group | `app-aoc-app-template-nextjs-dev-read` | remove | Confirm no real users or dependent tests still need access. |
 | Entra | Write group | `app-aoc-app-template-nextjs-dev-write` | remove | Confirm no real users or dependent tests still need access. |
 | Entra | Admin group | `app-aoc-app-template-nextjs-dev-admin` | remove | Confirm no real users or dependent tests still need access. |
-| Lakebase | Database | `db-app-aoc-app-template-nextjs-dev` | review | Retain or export audit rows before deletion. |
-| Lakebase | App audit table | `app_audit_events` in `db-app-aoc-app-template-nextjs-dev` | review | Durable proof audit record; retain for the agreed audit period unless exported to an approved store. |
+| Lakebase | Current database | `db_app_aoc_app_template_nextjs_dev` | review | Current underscore naming standard; retain or export audit rows before deletion. |
+| Lakebase | Legacy proof database | `db-app-aoc-app-template-nextjs-dev` | review | Created during the original Phase 0 proof before underscore naming was enforced. Retain or export audit rows before deletion. |
+| Lakebase | App audit table | `app_audit_events` in Lakebase app databases | review | Durable proof audit record; retain for the agreed audit period unless exported to an approved store. |
 | Lakebase | Database role/user | Databricks service-principal application ID used as `LAKEBASE_USER` | review | Remove only if no other proof database grants depend on it. |
 | GitHub | Environment | `dev` | retain | Template environment, not proof-app specific. |
 | GitHub | Environment | `prod` | retain | Template environment, not proof-app specific. |

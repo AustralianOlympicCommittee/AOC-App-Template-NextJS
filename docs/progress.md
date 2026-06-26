@@ -11,7 +11,7 @@ Evidence:
 - GitHub Actions Phase 0 Deploy run `27855715133` passed on commit `311171ebb6b137939432cdea27c240a8fc70b8b4`.
 - GitHub Actions Validate run `27855715140` passed on the same commit.
 - Azure Container App `ca-aoc-app-template-nextjs-dev` reached a ready revision.
-- Lakebase database `db-app-aoc-app-template-nextjs-dev` was created.
+- Lakebase database `db-app-aoc-app-template-nextjs-dev` was created during the original proof. This is now treated as a legacy proof database because the current standard uses underscore identifiers.
 - `/api/health` returned `status: ok`.
 - `/api/audit-test` inserted an audit event into Lakebase.
 
@@ -294,3 +294,38 @@ Verification so far:
 Remaining follow-up:
 
 - During the first real app trial, use this register for every adoption blocker and decide whether any client-repo issue should be promoted to a central template/platform issue.
+
+## Phase 1G - Lakebase Database Naming Alignment
+
+Status: in progress; local contract and documentation updates added.
+
+Trigger:
+
+- The `AustralianOlympicCommittee/JS-Test-Sample-Repo` adoption trial recorded `ISSUE-002`, which identified a conflict between the template guidance and contract validator.
+- Guidance said Lakebase database identifiers should use underscores for PostgreSQL compatibility.
+- The validator and deployment manifest still generated `db-app-<app>-<env>` with hyphens.
+
+Scope:
+
+- Keep Azure, Container Apps, Entra and GitHub names hyphenated.
+- Change only Lakebase database identifiers to the underscore pattern `db_app_<app_with_underscores>_<env>`.
+- Preserve historical Phase 0 evidence as legacy proof database records.
+- Record the old hyphenated template database as a cleanup/decommission item rather than deleting it automatically.
+
+Implementation record:
+
+- Updated `scripts/app-contract.mjs` to derive Lakebase database names with underscores.
+- Updated `scripts/validate-app-contract.mjs` to validate the underscore Lakebase naming pattern.
+- Updated `app.yml` so the template dev database is `db_app_aoc_app_template_nextjs_dev`.
+- Updated app contract, security, proof runbook, Phase 0 results and decommission documentation.
+
+Verification so far:
+
+- `npm run validate:contract` passed.
+- `npm run validate:manifest` passed and generated `database_name: db_app_aoc_app_template_nextjs_dev`.
+- `npm run check` passed, including contract validation, adoption documentation validation, script syntax checks, manifest generation, Entra dry-run plan, TypeScript and the Next.js production build.
+
+Remaining verification:
+
+- Let the deployment workflow prove Lakebase can create/use the underscore-named database.
+- Record the GitHub Actions run IDs after validation/deployment.

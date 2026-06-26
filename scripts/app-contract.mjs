@@ -259,11 +259,15 @@ function environmentNames(appName, environment) {
   return {
     containerApp: `ca-${appName}-${environment}`,
     containerEnvironment: `cae-${appName}-${environment}`,
-    database: `db-app-${appName}-${environment}`,
+    database: lakebaseDatabaseName(appName, environment),
     entraApp: `app-${appName}-${environment}`,
     managedIdentity: `id-app-${appName}-${environment}`,
     resourceGroup: `rg-app-${appName}-${environment}`
   };
+}
+
+export function lakebaseDatabaseName(appName, environment) {
+  return `db_app_${appName.replaceAll("-", "_")}_${environment}`;
 }
 
 function requiredScalar(contract, sectionName, key) {
